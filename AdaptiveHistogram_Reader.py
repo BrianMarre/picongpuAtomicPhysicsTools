@@ -1,11 +1,9 @@
 import openpmd_api as io
 import numpy as np
+import math
 
-filepath = "/home/marre55/picongpuOutput/testAdaptiveHistogramOutput/simOutput/C_adaptiveHistogramPerSuperCell/"
-filename = filepath + "adaptiveHistogramPerSuperCell_%T.bp"
-meshname = "adaptiveHistogram"
-
-def readAdaptiveHistogram(filename, meshname):
+# read adaptivehsitogram data from given mesh
+def readAdaptiveHistogramFromMesh(series, openPmdMesh):
     """ read an adaptive histogram from openPMD output file/s given and organize the data
 
         an adaptive histogram contains the following data:
@@ -16,7 +14,7 @@ def readAdaptiveHistogram(filename, meshname):
 
         This data is stored in order consecutively in linear memory, eg.
         memoryIndex |0       1                   ... maxNumBins                      maxNumBins+1 ...
-        data        |numBin  leftBoundary bin #1 ... leftBoundary bin #maxNumBins    width bin #1 ...
+        data        |numBins  leftBoundary bin #1 ... leftBoundary bin #maxNumBins    width bin #1 ...
         This is a representation is also used in the output formating.
         For a cartesian grid with n_x sample points in the x dimension, and one
         adaptive histogram for each grid point, the output is a scalar field with
@@ -25,79 +23,115 @@ def readAdaptiveHistogram(filename, meshname):
         the memory layout described above, eg. the x dimension contains n_x adaptive
         histograms blocks, each block reproducing the memory layout behind each other.
 
-        returns: numBin(gridExtent), leftBoundaryBins(gridExtent, maxNumBins),
-            widthBins(gridExtent, maxNumBins), weightBins(gridExtent, maxNumBins), argumentUNIT
+        returns: gridExtent, numBins(gridExtent), leftBoundaryBins(gridExtent, maxNumBins),
+            widthBins(gridExtent, maxNumBins), weightBins(gridExtent, maxNumBins)
 
-        numBin ... number of occupied Bins
+        numBins ... number of occupied Bins
         leftBoundaryBins ... left boundary of bins
         widthBins ... width of bins
         weightBins ... weight of paritcles in bin, equivalent number of physical particles
-        argumentUNIT ... unit of argument axis
     """
-    series = io.Series(filename, io.Access.read_only) # open series
 
-    for i in series.iterations: # for each time step output
+    data = openPmdMesh[io.Mesh_Record_Component.SCALAR] # data is stored in artificially increased extent
+
+    # get histogram attributes
+    numValuesPerBin = openPmdMesh.get_attribute("numberValuesPerBin")
+    maxNumBins = openPmdMesh.get_attribute("maxNumBins")
+
+
+    adaptiveHistogramData = data.load_chunk() # (... , y, x) indexation, artificial extent increase in x-direction
+    series.flush()
+
+    # get different extents
+    dataExtent = np.shape(adaptiveHistogramData)
+    numDimension = len(dataExtent)
+
+    # extent of data array is artificially increased in x direction, and indexation is (...,y,x)
+    gridExtent = np.copy(dataExtent)
+    gridExtent[numDimension - 1] = gridExtent[numDimension - 1] / (numValuesPerBin * maxNumBins + 1)
+    binExtent = np.append(gridExtent, maxNumBins)
+
+    #extract data
+    numBins = np.empty(gridExtent, dtype=np.uint16)
+
+    leftBoundaryBins = np.empty(binExtent)
+    widthBins = np.empty(binExtent)
+    weightBins = np.empty(binExtent)
+
+    #iterate over grid to extract data
+    numEntriesAdaptiveHistogram = numValuesPerBin * maxNumBins + 1
+
+    currentGridIndex = np.zeros(numDimension, dtype=np.uint64)
+    for n in range(np.prod(gridExtent)): # for each gridPoint
+        startIndexCurrentSuperCell = int(currentGridIndex[-1] * numEntriesAdaptiveHistogram)
+
+        # numberBins is always stored as first entry for super cell
+        numBins[tuple(currentGridIndex)] = np.uint16(adaptiveHistogramData[tuple(currentGridIndex[:-1])][startIndexCurrentSuperCell])
+
+        # select first all but the last dimension, last dim is extended, and choose correct slice from last dim x
+        startIndexValues = startIndexCurrentSuperCell+1
+
+        leftBoundaryBins[tuple(currentGridIndex)] = adaptiveHistogramData[
+            tuple(currentGridIndex[:-1])][ # super cell Index for non extended dims(... ,y)
+            startIndexValues:(startIndexValues + maxNumBins)] # x = (0:maxNumBins)+startIndex, end is exclusive
+
+        # adavance offset for next value
+        startIndexValues += maxNumBins
+
+        widthBins[tuple(currentGridIndex)] = adaptiveHistogramData[
+            tuple(currentGridIndex[:-1])][
+            startIndexValues:(startIndexValues + maxNumBins)] # x = (0:maxNumBins)+startIndex, end is exclusive
+
+        # adavance offset for next value
+        startIndexValues += maxNumBins
+
+        weightBins[tuple(currentGridIndex)] = adaptiveHistogramData[
+            tuple(currentGridIndex[:-1])][
+            startIndexValues:(startIndexValues + maxNumBins)] # x = (0:maxNumBins)+startIndex, end is exclusive
+
+        # update to next gridIndex
+        for d in range(numDimension):
+            if ( currentGridIndex[d] < (gridExtent[d] - 1) ):
+                currentGridIndex[d] += 1
+                break
+            else:
+                currentGridIndex[d] = 0
+
+    return gridExtent, numBins, leftBoundaryBins, widthBins, weightBins
+
+# create accumulated adaptiveHistogram from file for each time step
+def readAccumulatedAdaptiveHistogram(filename):
+
+    meshname = "adaptiveHistogram"
+
+    timeSteps = []
+
+    series = io.Series(filename, io.Access.read_only)
+    for i in series.iterations:
         step = series.iterations[i]
+
         openPmdMesh = step.meshes[meshname]
-
-        data = openPmdMesh[io.Mesh_Record_Component.SCALAR] # data is stored in artificially increased extent
-
-        # get histogram attributes
-        numValuesPerBin = openPmdMesh.get_attribute("numberValuesPerBin")
-        maxNumBins = openPmdMesh.get_attribute("maxNumBins")
         argumentUNIT = openPmdMesh.get_attribute("ATOMIC_UNIT_ENERGY")
+        gridExtent, numBins, leftBoundaryBins, widthBins, weightBins = (
+            readAdaptiveHistogramFromMesh(series, openPmdMesh))
 
-        adaptiveHistogramData = data.load_chunk() # (... , y, x) indexation, artificial extent increase in x-direction
-        series.flush()
-
-        # get different extents
-        dataExtent = np.shape(adaptiveHistogramData)
-        numDimension = len(dataExtent)
-
-        # extent of data array is artificially increased in x direction, and indexation is (...,y,x)
-        gridExtent = np.copy(dataExtent)
-        gridExtent[numDimension - 1] = gridExtent[numDimension - 1] / (numValuesPerBin * maxNumBins + 1)
-        binExtent = np.append(gridExtent, maxNumBins)
-
-        #extract data
-        numBins = np.empty(gridExtent, dtype=np.uint16)
-
-        leftBoundaryBins = np.empty(binExtent)
-        widthBins = np.empty(binExtent)
-        weightBins = np.empty(binExtent)
-
-        #iterate over grid to extract data
-        numEntriesAdaptiveHistogram = numValuesPerBin * maxNumBins + 1
+        accumulatedAdaptiveHistogram = {}
+        numDimension = len(gridExtent)
 
         currentGridIndex = np.zeros(numDimension, dtype=np.uint64)
         for n in range(np.prod(gridExtent)): # for each gridPoint
-            startIndexCurrentSuperCell = int(currentGridIndex[-1] * numEntriesAdaptiveHistogram)
+            print(currentIndex)
+            for i in range(numBins[currentGridIndex]):
+                bin = accumulatedAdaptiveHistogram.get(leftBoundaryBins[currentGridIndex][i])
 
-            # numberBins is always stored as first entry for super cell
-            numBins[tuple(currentGridIndex)] = np.uint16(adaptiveHistogramData[tuple(currentGridIndex[:-1])][startIndexCurrentSuperCell])
+                # exists => add weight
+                if bin:
+                    accumulatedAdaptiveHistogram[leftBoundaryBins] += weightBins[currentGridIndex][i]
+                # does not exist create new key with weight as initial value
+                else:
+                    accumulatedAdaptiveHistogram[leftBoundaryBins] = weightBins[currentGridIndex][i]
 
-            # select first all but the last dimension, last dim is extended, and choose correct slice from last dim x
-            startIndexValues = startIndexCurrentSuperCell+1
-
-            leftBoundaryBins[tuple(currentGridIndex)] = adaptiveHistogramData[
-                tuple(currentGridIndex[:-1])][ # super cell Index for non extended dims(... ,y)
-                startIndexValues:(startIndexValues + maxNumBins)] # x = (0:maxNumBins)+startIndex, end is exclusive
-
-            # adavance offset for next value
-            startIndexValues += maxNumBins
-
-            widthBins[tuple(currentGridIndex)] = adaptiveHistogramData[
-                tuple(currentGridIndex[:-1])][
-                startIndexValues:(startIndexValues + maxNumBins)] # x = (0:maxNumBins)+startIndex, end is exclusive
-
-            # adavance offset for next value
-            startIndexValues += maxNumBins
-
-            weightBins[tuple(currentGridIndex)] = adaptiveHistogramData[
-                tuple(currentGridIndex[:-1])][
-                startIndexValues:(startIndexValues + maxNumBins)] # x = (0:maxNumBins)+startIndex, end is exclusive
-
-            # update next gridIndex
+            # update to next gridIndex
             for d in range(numDimension):
                 if ( currentGridIndex[d] < (gridExtent[d] - 1) ):
                     currentGridIndex[d] += 1
@@ -105,7 +139,15 @@ def readAdaptiveHistogram(filename, meshname):
                 else:
                     currentGridIndex[d] = 0
 
-    del series
-    return numBins, leftBoundaryBins, widthBins, weightBins, argumentUNIT
+        #append result to total results
+        timeSteps.append(accumulatedAdaptiveHistogram)
 
-numBins, leftBoundaryBins, widthBins, weightBins, argumentUNIT = readAdaptiveHistogram(filename, meshname)
+    # convert timesteps to numpy arrays?
+
+    del series
+    return timeSteps
+
+filepath = "/home/marre55/picongpuOutput/testAdaptiveHistogramOutput/simOutput/C_adaptiveHistogramPerSuperCell/"
+filename = filepath + "adaptiveHistogramPerSuperCell_%T.bp"
+
+readAccumulatedAdaptiveHistogram(filename)
