@@ -5,7 +5,7 @@ import math
 def getAtomicStateData(filename, speciesName, atomicNumber):
     """ returns the atomic state data of an openPMD particle output of a simulation
 
-        Paramters: 
+        Paramters:
             filename(string-like) ... filenames of data input
             speciesName(string-like) ... string identifier of species
             atomicNumber(uint < 128) ... atomic Number of Ion-Species

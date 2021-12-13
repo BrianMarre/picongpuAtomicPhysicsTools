@@ -1,5 +1,7 @@
 import openpmd_api as io
 import numpy as np
+import struct
+import math
 
 # read adaptivehsitogram data from given mesh
 def readAdaptiveHistogramFromMesh(series, openPmdMesh):
@@ -43,8 +45,6 @@ def readAdaptiveHistogramFromMesh(series, openPmdMesh):
     adaptiveHistogramData = data.load_chunk() # (... , y, x) indexation, artificial extent increase in x-direction
     series.flush()
 
-    print(adaptiveHistogramData)
-
     # get different extents
     dataExtent = np.shape(adaptiveHistogramData)
     numDimension = len(dataExtent)
@@ -71,7 +71,12 @@ def readAdaptiveHistogramFromMesh(series, openPmdMesh):
         startIndexCurrentSuperCell = int(currentGridIndex[-1] * numEntriesAdaptiveHistogram)
 
         # numberBins is always stored as first entry for super cell
-        numBins[tuple(currentGridIndex)] = np.uint16(adaptiveHistogramData[tuple(currentGridIndex[:-1])][startIndexCurrentSuperCell])
+        numBins[tuple(currentGridIndex)] = np.uint16(
+            struct.unpack(
+                'i',
+                adaptiveHistogramData[tuple(currentGridIndex[:-1])][startIndexCurrentSuperCell]
+                )[0]
+            )
 
         # select first all but the last dimension, last dim is extended, and choose correct slice from last dim x
         startIndexValues = startIndexCurrentSuperCell+1
@@ -166,8 +171,6 @@ def testReadFromMesh(filename):
     return True
 
 # create accumulated adaptiveHistogram from file for each time step
-# NOTE: not prepared for large number of grid points,
-#   kahan summation implementation outstanding
 def readAccumulatedAdaptiveHistogram(filename):
     """ reads the adaptive histogram openPMD output from given files and
         returns accumulated histograms over all gridpoint for each time step
@@ -189,42 +192,33 @@ def readAccumulatedAdaptiveHistogram(filename):
 
         openPmdMesh = step.meshes[meshname]
 
-        # argumentUNIT = openPmdMesh.get_attribute("ATOMIC_UNIT_ENERGY")
+        argumentUNIT = openPmdMesh.get_attribute("ATOMIC_UNIT_ENERGY")
 
         gridExtent, numBins, leftBoundaryBins, widthBins, weightBins = (
             readAdaptiveHistogramFromMesh(series, openPmdMesh))
 
         numDimension = len(gridExtent)
 
-        accumulatedAdaptiveHistogram = {}
+        accumulatedWeights = {} # dictionary(binLeftBoundary:[weight])
+        accumulatedWidths = {} # dictionary(binLeftBoundary:width)
         currentGridIndex = np.zeros(numDimension, dtype=np.uint64)
         for n in range(np.prod(gridExtent)): # for each gridPoint
 
-            print(currentGridIndex)
-            print(numBins[tuple(currentGridIndex)])
-
             # for each occupied bin in adaptive histogram
             for i in range(numBins[tuple(currentGridIndex)]):
-                bin = accumulatedAdaptiveHistogram.get(leftBoundaryBins[tuple(currentGridIndex)][i])
+                bin = accumulatedWeights.get(leftBoundaryBins[tuple(currentGridIndex)][i])
 
                 # exists => add weight
                 if bin:
-                    weight = accumulatedAdaptiveHistogram[
-                        leftBoundaryBins[tuple(currentGridIndex)][i]][0]
-                    weight += weightBins[tuple(currentGridIndex)][i]
-
-                    width = accumulatedAdaptiveHistogram[
-                        leftBoundaryBins[tuple(currentGridIndex)][i]][1]
-
-                    accumulatedAdaptiveHistogram[
-                        leftBoundaryBins[tuple(currentGridIndex)][i]] = (weight, width)
+                    (accumulatedWeights[leftBoundaryBins[tuple(currentGridIndex)][i]]
+                        ).append(weightBins[tuple(currentGridIndex)][i])
 
                 # does not exist create new key with weight as initial value
                 else:
-                    accumulatedAdaptiveHistogram[
-                        leftBoundaryBins[tuple(currentGridIndex)][i]] = (
-                            weightBins[tuple(currentGridIndex)][i],
-                            widthBins[tuple(currentGridIndex)][i])
+                    accumulatedWidths[leftBoundaryBins[tuple(currentGridIndex)][i]] = (
+                        widthBins[tuple(currentGridIndex)][i])
+                    accumulatedWeights[leftBoundaryBins[tuple(currentGridIndex)][i]] = (
+                        [weightBins[tuple(currentGridIndex)][i]])
 
             # update to next gridIndex
             for d in range(numDimension-1, -1, -1):
@@ -234,12 +228,15 @@ def readAccumulatedAdaptiveHistogram(filename):
                 else:
                     currentGridIndex[d] = 0
 
+        # add together bin weights numerically stable
+        accumulatedAdaptiveHistogram = {}
+        for k in accumulatedWeights.keys():
+            totalWeight = math.fsum(accumulatedWeights[k])
+            accumulatedAdaptiveHistogram[k] = (totalWeight, accumulatedWidths[k])
+
         # append result of current time step to output
         histograms.append(accumulatedAdaptiveHistogram)
         timeSteps.append(iteration)
 
-        print(histograms[len(histograms)-1])
-        print(timeSteps[len(histograms)-1])
-
     del series
-    return timeSteps, histograms
+    return timeSteps, histograms, argumentUNIT
