@@ -57,8 +57,8 @@ for j in range(len(timeSteps)):
 
     dataWeighting = weighting.load_chunk()
     dataMomentum_x = momentum_x.load_chunk()
-    dataMomentum_y = momentum_x.load_chunk()
-    dataMomentum_z = momentum_x.load_chunk()
+    dataMomentum_y = momentum_y.load_chunk()
+    dataMomentum_z = momentum_z.load_chunk()
 
     # flush data to prepared buffers
     seriesParticleOutput.flush()
@@ -100,13 +100,10 @@ for j in range(len(timeSteps)):
     binCenters = (np.array(binBoundaries[1:]) + np.array(binBoundaries[:-1]))/2.
     binWidths = np.array(binBoundaries[1:]) - np.array(binBoundaries[:-1])
 
-    print(binBoundaries)
-    print(binWidths)
-
     # bin particles, with same bins
     hist, bins = np.histogram(E_kin, bins=binBoundaries, weights=dataWeighting) # same bins
     # plot binned particles as comparison
-    plt.plot( binCenters, hist/binWidths, 'x-r' )
+    plt.plot( binCenters, hist/binWidths, 'xr' )
     plt.savefig( str(iteration) + "_adaptiveHistogramOutput.png" )
 
     # free binning
@@ -114,10 +111,6 @@ for j in range(len(timeSteps)):
     centerBinsFree = binsFree/2 + np.roll(binsFree, -1, 0)/2
     centerBinsFree = centerBinsFree[:-1]
     widthBinsFree = binsFree[1:] - binsFree[:-1]
-
-    print(binsFree)
-    print(widthBinsFree)
-
 
     fig = plt.figure(dpi=400)
     plt.title("histogram of electrons, iteration " + str(iteration))
