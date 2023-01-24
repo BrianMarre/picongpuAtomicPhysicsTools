@@ -40,8 +40,10 @@ class BoundBoundTransitions:
         return result
 
     @staticmethod
-    def collisionalBoundBoundCrossSection(excitation, energyElectron, energyDiffLowerUpper,
-        collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5):
+    def collisionalBoundBoundCrossSection(energyElectron, energyDiffLowerUpper,
+        collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
+        lowerStateLevelVector, upperStateLevelVector,
+        excitation):
         """ cross section for de-/excitation transition due to interaction with free electron
 
             @param excitation bool true =^= excitation, false =^= deexcitation
@@ -83,9 +85,10 @@ class BoundBoundTransitions:
 
     @staticmethod
     def rateCollisonalBoundBoundTransition(
-        excitation,
         energyElectron, energyElectronBinWidth, densityElectrons,
-        energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5)
+        energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
+        lowerStateLevelVector, upperStateLevelVector,
+        excitation=True)
         """ rate of collisional de-/excitation
 
             @param excitation bool true =^= excitation, false =^= deexcitation
@@ -105,9 +108,10 @@ class BoundBoundTransitions:
             @return unit 1/s
         """
 
-        sigma = BoundBoundTransitions.collisionalBoundBoundCrossSection( excitation,
+        sigma = BoundBoundTransitions.collisionalBoundBoundCrossSection(
             energyElectron, energyDiffLowerUpper,
-            collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5) # 1e6b
+            collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
+            lowerStateLevelVector, upperStateLevelVector, excitation) # 1e6b
 
         if sigma < 0.:
             sigma = 0.

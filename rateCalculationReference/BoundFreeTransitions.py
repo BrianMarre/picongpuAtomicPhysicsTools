@@ -56,7 +56,8 @@ class BoundFreeTransitions:
 
     @staticmethod
     def collisionalIonizationRate(
-        energyElectron, ionizationEnergy, excitationEnergyDifference, screenedCharge,
+        energyElectron, energyElectronBinWidth, densityElectrons,
+        ionizationEnergy, excitationEnergyDifference, screenedCharge,
         lowerStateLevelVector, upperStateLevelVector):
         """ rate of ionization due to interaction with free electron
 
