@@ -8,7 +8,7 @@ License: GPLv3+
 """ @file implements methods of rate calculation for transitions using bound-free transition data """
 
 import numpy as np
-import scipy.constants.physical_constants as const
+import scipy.constants as const
 import scipy.special as scipy
 
 class BoundFreeTransitions:
@@ -23,14 +23,14 @@ class BoundFreeTransitions:
     @staticmethod
     def _multiplicity(lowerStateLevelVector, upperStateLevelVector):
         result = 1.
-        for i in range(length(lowerStateLevelVector)):
+        for i in range(len(lowerStateLevelVector)):
             result *= scipy.comb(lowerStateLevelVector[i], lowerStateLevelVector[i] - upperStateLevelVector[i])
         return result
 
     @staticmethod
     def collisionalIonizationCrossSection(
         energyElectron, ionizationEnergy, excitationEnergyDifference, screenedCharge,
-        lowerStateLevelVector, upperStateLevelVector)
+        lowerStateLevelVector, upperStateLevelVector):
         """ get cross section for ionization by interaction with a free electron
 
             @param energyElectron float energy of interacting free electron, [eV]
@@ -52,10 +52,10 @@ class BoundFreeTransitions:
         return (np.pi * const.value("Bohr radius")**2 * 2.3 * combinatorialFactor
             * (const.value("Rydberg constant times hc in eV")/energyDifference)**2
             * 1./U
-            * np.log(U) * self._wFactor(U)) / 1e-22 # 1e6b, 1e-22 m^2
+            * np.log(U) * BoundFreeTransitions._wFactor(U, screenedCharge)) / 1e-22 # 1e6b, 1e-22 m^2
 
     @staticmethod
-    def collisionalIonizationRate(
+    def rateCollisionalIonization(
         energyElectron, energyElectronBinWidth, densityElectrons,
         ionizationEnergy, excitationEnergyDifference, screenedCharge,
         lowerStateLevelVector, upperStateLevelVector):
@@ -97,6 +97,6 @@ class BoundFreeTransitions:
         # dE * sigma(E) * rho_e * v
         # eV * 1e6b * m^2/(1e6b) * 1/(m^3 * eV) * m/s * unitless
         # = eV/(eV) * m^2 * 1/m^3 * m/s = 1/s
-        return (energyElectronBinWidth * sigma * 1e-22 * densityElectrons * 
+        return (energyElectronBinWidth * sigma * 1e-22 * densityElectrons
             * const.value("speed of light in vacuum")
-            * np.sqrt(1. - 1./ (1 . + energyElectron / electronRestMassEnergy)**2)) # 1/s
+            * np.sqrt(1. - 1./ (1. + energyElectron / electronRestMassEnergy)**2)) # 1/s

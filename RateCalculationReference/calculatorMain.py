@@ -27,29 +27,30 @@ if __name__ == "__main__":
     absorptionOscillatorStrength = 1.e-1
     lowerStateLevelVectorBoundBound = (1,1,1,0,0,0,1,0,0,0)
     upperStateLevelVectorBoundBound = (1,1,0,0,0,0,1,0,1,0)
+    frequencyPhoton = energyDiffLowerUpper # 1/s @todo wrong, fix!
 
     print("bound-free:")
     print("\t collisional ionization rate[1/s]: "
-        + str(boundfree.collisionalIonizationRate(
+        + str(boundfree.BoundFreeTransitions.rateCollisionalIonization(
             energyElectron, energyElectronBinWidth, densityElectrons,
             ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
 
     print("bound-bound:")
     print("\t collisional excitation rate [1/s]: "
-        + str(boundbound.rateCollisionalBoundBoundTransition(
+        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
             energyElectron, energyElectronBinWidth, densityElectrons,
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
-            excitation=true)))
+            excitation=True)))
     print("\t collisional deexcitation rate [1/s]: "
-        + str(boundbound.rateCollisionalBoundBoundTransition(
+        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
             energyElectron, energyElectronBinWidth, densityElectrons,
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
-            excitation=false)))
+            excitation=False)))
 
     print("\t spontaneous radiative deexcitation rate [1/s]: "
-        + str(boundbound.rateSpontaneousDeexcitation(
+        + str(boundbound.BoundBoundTransitions.rateSpontaneousDeexcitation(
             absorptionOscillatorStrength, frequencyPhoton,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound)))
