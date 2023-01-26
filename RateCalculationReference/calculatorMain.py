@@ -27,49 +27,51 @@ if __name__ == "__main__":
     absorptionOscillatorStrength = 1.e-1
     lowerStateLevelVectorBoundBound = (1,1,1,0,0,0,1,0,0,0)
     upperStateLevelVectorBoundBound = (1,1,0,0,0,0,1,0,1,0)
-    frequencyPhoton = energyDiffLowerUpper # 1/s @todo wrong, fix!
+    frequencyPhoton = energyDiffLowerUpper / const.physical_constants["Planck constant in eV/Hz"][0] # 1/s
 
-    print("cross section bound-free:")
-    print("\t collisonal ionization cross section [1e6 barn]: "
-        + str(boundfree.BoundFreeTransitions.collisionalIonizationCrossSection(
+    print("cross sections:")
+    print("- bound-free")
+    print("\t collisional ionization cross section: \t  {0:.12e} 1e6*barn".format(
+        boundfree.BoundFreeTransitions.collisionalIonizationCrossSection(
             energyElectron, ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
 
-    print("cross sections bound-bound:")
-    print("\t collisional excitation cross section [1e6 barn]: "
-        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundCrossSection(
+    print("- bound-bound")
+    print("\t collisional excitation cross section: \t  {0:.12e} 1e6*barn".format(
+        boundbound.BoundBoundTransitions.collisionalBoundBoundCrossSection(
             energyElectron,
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
             excitation=True)))
-    print("\t collisional deexcitation rate [1/s]: "
-        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundCrossSection(
+    print("\t collisional deexcitation cross section:  {0:.12e} 1e6*barn".format(
+        boundbound.BoundBoundTransitions.collisionalBoundBoundCrossSection(
             energyElectron,
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
             excitation=False)))
 
-    print("rates bound-free:")
-    print("\t collisional ionization rate[1/s]: "
-        + str(boundfree.BoundFreeTransitions.rateCollisionalIonization(
+    print("rates:")
+    print("- bound-free")
+    print("\t collisional ionization rate:  \t\t  {0:.12e} 1/s".format(
+        boundfree.BoundFreeTransitions.rateCollisionalIonization(
             energyElectron, energyElectronBinWidth, densityElectrons,
             ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
 
-    print("rates bound-bound:")
-    print("\t collisional excitation rate [1/s]: "
-        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
+    print("- bound-bound")
+    print("\t collisional excitation rate:  \t\t  {0:.12e} 1/s".format(
+        boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
             energyElectron, energyElectronBinWidth, densityElectrons,
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
             excitation=True)))
-    print("\t collisional deexcitation rate [1/s]: "
-        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
+    print("\t collisional deexcitation rate:  \t  {0:.12e} 1/s".format(
+        boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
             energyElectron, energyElectronBinWidth, densityElectrons,
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
             excitation=False)))
-    print("\t spontaneous radiative deexcitation rate [1/s]: "
-        + str(boundbound.BoundBoundTransitions.rateSpontaneousDeexcitation(
+    print("\t spontaneous radiative deexcitation rate: {0:.12e} 1/s".format(
+        boundbound.BoundBoundTransitions.rateSpontaneousDeexcitation(
             absorptionOscillatorStrength, frequencyPhoton,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound)))
