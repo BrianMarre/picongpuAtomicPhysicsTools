@@ -29,14 +29,34 @@ if __name__ == "__main__":
     upperStateLevelVectorBoundBound = (1,1,0,0,0,0,1,0,1,0)
     frequencyPhoton = energyDiffLowerUpper # 1/s @todo wrong, fix!
 
-    print("bound-free:")
+    print("cross section bound-free:")
+    print("\t collisonal ionization cross section [1e6 barn]: "
+        + str(boundfree.BoundFreeTransitions.collisionalIonizationCrossSection(
+            energyElectron, ionizationEnergy, excitationEnergyDifference, screenedCharge,
+            lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
+
+    print("cross sections bound-bound:")
+    print("\t collisional excitation cross section [1e6 barn]: "
+        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundCrossSection(
+            energyElectron,
+            energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
+            lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
+            excitation=True)))
+    print("\t collisional deexcitation rate [1/s]: "
+        + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundCrossSection(
+            energyElectron,
+            energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
+            lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
+            excitation=False)))
+
+    print("rates bound-free:")
     print("\t collisional ionization rate[1/s]: "
         + str(boundfree.BoundFreeTransitions.rateCollisionalIonization(
             energyElectron, energyElectronBinWidth, densityElectrons,
             ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
 
-    print("bound-bound:")
+    print("rates bound-bound:")
     print("\t collisional excitation rate [1/s]: "
         + str(boundbound.BoundBoundTransitions.rateCollisionalBoundBoundTransition(
             energyElectron, energyElectronBinWidth, densityElectrons,
@@ -49,7 +69,6 @@ if __name__ == "__main__":
             energyDiffLowerUpper, collisionalOscillatorStrength, cxin1, cxin2, cxin3, cxin4, cxin5,
             lowerStateLevelVectorBoundBound, upperStateLevelVectorBoundBound,
             excitation=False)))
-
     print("\t spontaneous radiative deexcitation rate [1/s]: "
         + str(boundbound.BoundBoundTransitions.rateSpontaneousDeexcitation(
             absorptionOscillatorStrength, frequencyPhoton,
