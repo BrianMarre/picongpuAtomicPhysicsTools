@@ -7,7 +7,7 @@ if __name__ == "__main__":
     # electron histogram info
     energyElectron = 1000. # eV
     energyElectronBinWidth = 10. # eV
-    densityElectrons = 1e28 #eV
+    densityElectrons = 1e28 #1/(eV * m^3)
 
     # bound-free transition data
     ionizationEnergy = 100. # eV
@@ -25,8 +25,8 @@ if __name__ == "__main__":
     cxin5 = 5.
     collisionalOscillatorStrength = 1.
     absorptionOscillatorStrength = 1.e-1
-    lowerStateLevelVectorBoundBound = (1,1,1,0,0,0,1,0,0,0)
-    upperStateLevelVectorBoundBound = (1,1,0,0,0,0,1,0,1,0)
+    lowerStateLevelVectorBoundBound = (1,0,2,0,0,0,1,0,0,0)
+    upperStateLevelVectorBoundBound = (1,0,1,0,0,0,1,0,1,0)
     frequencyPhoton = energyDiffLowerUpper / const.physical_constants["Planck constant in eV/Hz"][0] # 1/s
 
     print("cross sections:")

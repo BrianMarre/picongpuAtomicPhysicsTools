@@ -81,7 +81,7 @@ class BoundBoundTransitions:
                 BoundBoundTransitions._multiplicity(lowerStateLevelVector)
                 /BoundBoundTransitions._multiplicity(upperStateLevelVector)) # unitless
             return statisticalRatio * crossSection_butGaunt * BoundBoundTransitions._gaunt(
-                U+1., cxin1, cxin2, cxin3, cxin4, cxin5) # 1e6
+                U+1., cxin1, cxin2, cxin3, cxin4, cxin5) # 1e6b
 
     @staticmethod
     def rateCollisionalBoundBoundTransition(
