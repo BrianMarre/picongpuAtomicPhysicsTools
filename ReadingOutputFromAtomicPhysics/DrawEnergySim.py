@@ -39,14 +39,3 @@ def drawEnergyOverTime(speciesNames, simName, title, pictureFilename, outputPath
     plt.legend()
     plt.savefig(pictureFileName)
     plt.close()
-
-
-simName = "testSolver13"
-speciesNames = ["Cu", "eth"]
-
-outputPath = "/home/marre55/picongpuOutput"
-title = "80ppc"
-pictureFileName = title + "Energy"
-
-
-drawEnergyOverTime(speciesNames, simName, title, pictureFileName, outputPath)
