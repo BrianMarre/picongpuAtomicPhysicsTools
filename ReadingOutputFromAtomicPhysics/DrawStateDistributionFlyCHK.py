@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 import plottingHelper as util
 
 import ConfigNumberConversion as trafo
-import openPMD_Reader as openPMD
-import flyCHK_Reader as flyCHK
+import reader.openPMD_Reader as openPMD
+import reader.flyCHK_Reader as flyCHK
 
 def DrawStateDistributionFlyCHK(speciesName, atomicNumber, numLevels, chargeIon,
     filenameAtomicStateData, filenameFlyCHK_output, filenamePIConGPU_output,

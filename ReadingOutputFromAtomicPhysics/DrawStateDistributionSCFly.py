@@ -1,5 +1,5 @@
 import openPMD_Reader as openPMD
-import SCFly_Reader as SCFly
+import reader.SCFly_Reader as SCFly
 import openpmd_api as io
 
 import plottingHelper as util
