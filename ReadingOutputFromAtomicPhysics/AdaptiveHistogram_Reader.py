@@ -6,7 +6,7 @@ import math
 # read adaptivehsitogram data from given mesh
 def readAdaptiveHistogramFromMesh(series, openPmdMesh):
     """ read an adaptive histogram from a given openPMD mesh and organize the data into
-        a more conveniet form
+        a more convenient form
 
         an adaptive histogram contains the following data:
             numBins:uint32                      ... number of occupied Bins, <= maxNumBins
@@ -18,7 +18,7 @@ def readAdaptiveHistogramFromMesh(series, openPmdMesh):
         memoryIndex |0       1                   ... maxNumBins                      maxNumBins+1 ...
         data        |numBins  leftBoundary bin #1 ... leftBoundary bin #maxNumBins    width bin #1 ...
         This is a representation is also used in the output formating.
-        For a cartesian grid with n_x sample points in the x dimension, and one
+        For a Cartesian grid with n_x sample points in the x dimension, and one
         adaptive histogram for each grid point, the output is a scalar field with
         n_x * (1+3*maxNumBins) sample points in the x-dimension.
         The additional points encode the actual histogram values by simple reproducing
@@ -33,7 +33,7 @@ def readAdaptiveHistogramFromMesh(series, openPmdMesh):
         numBins ... number of occupied Bins
         leftBoundaryBins ... left boundary of bins
         widthBins ... width of bins
-        weightBins ... weight of paritcles in bin, equivalent number of physical particles
+        weightBins ... weight of particles in bin, equivalent number of physical particles
     """
 
     data = openPmdMesh[io.Mesh_Record_Component.SCALAR] # data is stored in artificially increased extent

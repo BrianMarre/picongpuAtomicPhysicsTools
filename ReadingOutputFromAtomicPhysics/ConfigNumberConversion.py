@@ -28,17 +28,21 @@ def getLevelVector(x, atomicNumber, numLevels):
 
     return levelVector
 
+# tests
 def getConfigNumber(levelVector, atomicNumber):
     configNumber = 0
     for i in range(0,len(levelVector)):
         configNumber += stepLength(i+1, atomicNumber) * levelVector[i]
     return configNumber
 
-# @TODO: write Test using excel sheet for calculating values by hand
-# print(getLevelVector(11, 6, 10)) # test compare to expected value, [2,3,0,0,0,0,0,0,0,0]
+def testGetLevelVector():
+    assert(getLevelVector(11, 6, 10) == np.array((2,3,0,0,0,0,0,0,0,0))), "getLevelVector test failed"
 
-# @TODO: write test, BrianMarre, 2021
-#testLevelVector = np.array([2,1,1,0,0,0,0,1,0,0]) #352973
-#testLevelvector = np.array([2,3,0,0,0,0,0,0,0,0]) #11
-#testLevelVector =  np.array([0,1,0,0,0,0,0,0,0,1]) #Z = 18, 24134536956,
-#print(getConfigNumber(testLevelVector, 18)) 
+def testGetConfigNumber():
+    assert(getConfigNumber(np.array((2,1,1,0,0,0,0,1,0,0)), 18) == 352973), "getConfigNumber test failed"
+    assert(getConfigNumber(np.array((2,3,0,0,0,0,0,0,0,0)), 18) == 11), "getConfigNumber test failed"
+    assert(getConfigNumber(np.array((0,1,0,0,0,0,0,0,0,1)), 18) == 24134536956), "getConfigNumber test failed"
+
+def testAll():
+    testGetConfigNumber()
+    testGetLevelVector()

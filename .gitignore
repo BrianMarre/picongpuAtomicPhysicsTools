@@ -1,3 +1,6 @@
 *.png
 FlyCHK*
 __pycache__
+*.data
+*.dict
+Hints.txt

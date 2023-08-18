@@ -14,19 +14,11 @@ def getAtomicStateData(filename, speciesName, atomicNumber):
             iteration and each dictionary contains all occupied states and their
             associated weight as key-value pair
 
-        Note: this function is exessively commented, such that it may be used as an
+        @note this function is exessively commented, such that it may be used as an
         introduction to using the openPMD-api.
     """
-    # open a series of adios [.bp] files, in read only mode
+    # open a series of adios [.bp](hdf[.h5]) files, in read only mode
     series = io.Series(filename, io.Access.read_only)
-
-    #particle data available output, debug code
-    #step = series.iterations[0]
-    #for particleSpecies in step.particles:
-    #    print("\t {0}".format(particleSpecies))
-    #    print("With records:")
-    #    for record in step.particles[particleSpecies]:
-    #        print("\t {0}".format(record))
 
     listIterationData = []
 
@@ -50,7 +42,8 @@ def getAtomicStateData(filename, speciesName, atomicNumber):
 
         # bin existing states
         states = {}
-        # for all particles
+
+        # for all macro particles
         for i in range(0,np.shape(dataAtomicConfigNumber)[0]):
             configIndex = dataAtomicConfigNumber[i]
 
