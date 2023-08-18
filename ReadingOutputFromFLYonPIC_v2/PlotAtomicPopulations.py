@@ -373,27 +373,34 @@ class Config:
 
 if __name__ == "__main__":
     # base paths to FLYonPIC simulation openPMD output
-    basePath_30ppc = "/home/marre55/picInputs/testSCFlyComparison/openPMD_30ppc/"
-    basePath_60ppc = "/home/marre55/picInputs/testSCFlyComparison/openPMD_60ppc/"
+    basePath_30ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_30ppc/"
+    basePath_60ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_60ppc/"
 
     # fileName regexes
-    fileNames_30ppc = ["simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
-    fileNames_60ppc = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp",
+    fileNames_30ppc_Ar = ["simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
+    fileNames_60ppc_Ar = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp",
                        "simOutput_compare_4_%T.bp"]
 
     # FLYonPIC atomic states input data file
-    FLYonPIC_atomicStates = "/home/marre55/picInputs/testSCFlyComparison/AtomicStates_Ar.txt"
+    FLYonPIC_atomicStates_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/AtomicStates_Ar.txt"
 
     # SCFLY files
-    SCFLY_output = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/xout"
-    SCFLY_stateNames = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/atomicStateNaming.input"
+    SCFLY_output_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/xout"
+    SCFLY_stateNames_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/atomicStateNaming.input"
+
+    SCFLY_output_Li = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Li/xout"
+    SCFLY_stateNames_Li = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Li/atomicStateNaming.input"
 
     # must be < numberStates in input data set
-    numberStatesToPlot = 470
+    numberStatesToPlot_Ar = 470
 
-    atomicNumber = 18
-    numLevels = 10
-    speciesName = "Ar"
+    atomicNumber_Ar = 18
+    numLevels_Ar = 10
+    speciesName_Ar = "Ar"
+
+    atomicNumber_Li = 3
+    numLevels_Li = 10
+    speciesName_Li = "Li"
 
     # colourmap
     colorMap = plt.cm.tab20b
@@ -401,67 +408,82 @@ if __name__ == "__main__":
 
     loadRaw = True
 
-    config_SCFLY = Config(
+    config_SCFLY_Ar = Config(
         "",
-        SCFLY_stateNames,
+        SCFLY_stateNames_Ar,
         [],
         "",
-        SCFLY_output,
-        numberStatesToPlot,
+        SCFLY_output_Ar,
+        numberStatesToPlot_Ar,
         colorMap,
         numColorsInColorMap,
-        speciesName,
-        atomicNumber,
-        numLevels,
+        speciesName_Ar,
+        atomicNumber_Ar,
+        numLevels_Ar,
         "preProcessedData/",
-        "SCFLY")
+        "SCFLY_Ar")
 
-    config_30ppc = Config(
-        FLYonPIC_atomicStates,
+    config_30ppc_Ar = Config(
+        FLYonPIC_atomicStates_Ar,
         "",
-        fileNames_30ppc,
-        basePath_30ppc,
+        fileNames_30ppc_Ar,
+        basePath_30ppc_Ar,
         "",
-        numberStatesToPlot,
+        numberStatesToPlot_Ar,
         colorMap,
         numColorsInColorMap,
-        speciesName,
-        atomicNumber,
-        numLevels,
+        speciesName_Ar,
+        atomicNumber_Ar,
+        numLevels_Ar,
         "preProcessedData/",
-        "FLYonPIC_30ppc")
+        "FLYonPIC_30ppc_Ar")
 
-    config_60ppc = Config(
-        FLYonPIC_atomicStates,
+    config_60ppc_Ar = Config(
+        FLYonPIC_atomicStates_Ar,
         "",
-        fileNames_60ppc,
-        basePath_60ppc,
+        fileNames_60ppc_Ar,
+        basePath_60ppc_Ar,
         "",
-        numberStatesToPlot,
+        numberStatesToPlot_Ar,
         colorMap,
         numColorsInColorMap,
-        speciesName,
-        atomicNumber,
-        numLevels,
+        speciesName_Ar,
+        atomicNumber_Ar,
+        numLevels_Ar,
         "preProcessedData/",
-        "FLYonPIC_60ppc")
+        "FLYonPIC_60ppc_Ar")
 
-    config_FLYonPIC_SCFLY = Config(
-        FLYonPIC_atomicStates,
-        SCFLY_stateNames,
-        fileNames_60ppc,
-        basePath_60ppc,
-        SCFLY_output,
-        numberStatesToPlot,
+    config_Ar_FLYonPIC_SCFLY = Config(
+        FLYonPIC_atomicStates_Ar,
+        SCFLY_stateNames_Ar,
+        fileNames_60ppc_Ar,
+        basePath_60ppc_Ar,
+        SCFLY_output_Ar,
+        numberStatesToPlot_Ar,
         colorMap,
         numColorsInColorMap,
-        speciesName,
-        atomicNumber,
-        numLevels,
+        speciesName_Ar,
+        atomicNumber_Ar,
+        numLevels_Ar,
         "preProcessedData/",
-        "FLYonPIC_60ppc_SCFLY")
+        "FLYonPIC_60ppc_SCFLY_Ar")
 
-    tasks = [config_SCFLY, config_30ppc, config_60ppc, config_FLYonPIC_SCFLY]
+    config_SCFLY_Li = Config(
+        "",
+        SCFLY_stateNames_Li,
+        [],
+        "",
+        SCFLY_output_Li,
+        numberStatesToPlot_Ar,
+        colorMap,
+        numColorsInColorMap,
+        speciesName_Li,
+        atomicNumber_Li,
+        numLevels_Li,
+        "preProcessedData/",
+        "SCFLY_Li")
+
+    tasks = [config_SCFLY_Li]#, config_SCFLY_Ar, config_30ppc_Ar, config_60ppc_Ar, config_Ar_FLYonPIC_SCFLY]
 
     for config in tasks:
         print(config.dataName)
