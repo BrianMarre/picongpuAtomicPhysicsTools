@@ -1,8 +1,9 @@
 import openpmd_api as io
 import numpy as np
 import math
+from tqdm import tqdm
 
-def getAtomicStateData(filename, speciesName, atomicNumber):
+def getAtomicPopulationData(filename, speciesName):
     """ returns the atomic state data of an openPMD particle output of a simulation
 
         Paramters:
@@ -17,17 +18,30 @@ def getAtomicStateData(filename, speciesName, atomicNumber):
         @note this function is exessively commented, such that it may be used as an
         introduction to using the openPMD-api.
     """
-    # open a series of adios [.bp](hdf[.h5]) files, in read only mode
+    # open a series of adios [.bp] files, in read only mode
     series = io.Series(filename, io.Access.read_only)
 
-    listIterationData = []
+    #particle data available output, debug code
+    #step = series.iterations[0]
+    #for particleSpecies in step.particles:
+    #    print("\t {0}".format(particleSpecies))
+    #    print("With records:")
+    #    for record in step.particles[particleSpecies]:
+    #        print("\t {0}".format(record))
 
-    for i in series.iterations:
+    listIterationData = []
+    listTimeSteps = []
+
+    print(filename + " iteration:")
+    for i in tqdm(series.iterations):
+
         # select simulation iteration
         step = series.iterations[i]
 
         # get one specific species from all species of particles
         species = step.particles[speciesName]
+
+        listTimeSteps.append(step.get_attribute("time") * step.get_attribute("timeUnitSI"))
 
         # define data to be requested later
         atomicConfigNumber = species["atomicConfigNumber"][io.Mesh_Record_Component.SCALAR]
@@ -43,19 +57,19 @@ def getAtomicStateData(filename, speciesName, atomicNumber):
         # bin existing states
         states = {}
 
-        # for all macro particles
-        for i in range(0,np.shape(dataAtomicConfigNumber)[0]):
-            configIndex = dataAtomicConfigNumber[i]
+        # for all macro particles, @todo parallelise in lockstep variety
+        for j in range(0,np.shape(dataAtomicConfigNumber)[0]):
+            atomicConfigNumber = dataAtomicConfigNumber[j]
 
             # search in dictionary
-            weighting = states.get(configIndex)
+            weighting = states.get(atomicConfigNumber)
 
             # exists => add weight
             if weighting:
-                states[configIndex].append(dataWeightings[i])
+                states[atomicConfigNumber].append(dataWeightings[j])
             # does not exist create new key with weight as initial value
             else:
-                states[configIndex] = [dataWeightings[i]]
+                states[atomicConfigNumber] = [dataWeightings[j]]
 
         for state in states.keys():
             states[state] = math.fsum(states[state])
@@ -66,4 +80,4 @@ def getAtomicStateData(filename, speciesName, atomicNumber):
     # delete data
     del series
 
-    return listIterationData
+    return listIterationData, listTimeSteps
