@@ -375,14 +375,17 @@ if __name__ == "__main__":
     # base paths to FLYonPIC simulation openPMD output
     basePath_30ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_30ppc/"
     basePath_60ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_60ppc/"
+    basePath_30ppc_Li = "/mnt/data1/marre55/testSCFlyComparison/openPMD_30ppc/"
 
     # fileName regexes
     fileNames_30ppc_Ar = ["simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
     fileNames_60ppc_Ar = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp",
-                       "simOutput_compare_4_%T.bp"]
+                          "simOutput_compare_4_%T.bp"]
+    fileNames_30ppc_Li = ["simOutput_compare_1_%T.bp"]
 
     # FLYonPIC atomic states input data file
     FLYonPIC_atomicStates_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/AtomicStates_Ar.txt"
+    FLYonPIC_atomicStates_Li = "/home/marre55/picInputs/testSCFlyComparison_Li/AtomicStates_Ĺi.txt"
 
     # SCFLY files
     SCFLY_output_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/xout"
@@ -393,6 +396,7 @@ if __name__ == "__main__":
 
     # must be < numberStates in input data set
     numberStatesToPlot_Ar = 470
+    numberStatesToPlot_Li = 48
 
     atomicNumber_Ar = 18
     numLevels_Ar = 10
@@ -474,7 +478,7 @@ if __name__ == "__main__":
         [],
         "",
         SCFLY_output_Li,
-        numberStatesToPlot_Ar,
+        numberStatesToPlot_Li,
         colorMap,
         numColorsInColorMap,
         speciesName_Li,
