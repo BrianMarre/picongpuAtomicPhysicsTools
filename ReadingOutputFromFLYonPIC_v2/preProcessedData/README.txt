@@ -1,1 +1,1 @@
-evaluation scripts place pre processed data files here
+pre-processed raw data results are stored in this folder

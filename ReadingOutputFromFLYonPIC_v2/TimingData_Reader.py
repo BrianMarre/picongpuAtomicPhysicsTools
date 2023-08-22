@@ -67,12 +67,15 @@ def readTimingData(fileName):
     for timeUnit in timeUnits:
         output[timeUnit] = np.char.rstrip(output[timeUnit], timeUnit)
 
-    fullSimulationTime = ((0 if output[0][0] == '' else int(output[0][0])) * 60 * 60 * 1000
-                            + (0 if output[0][1] == '' else int(output[0][1])) * 60 * 1000
-                            + (0 if output[0][2] == '' else int(output[0][2])) * 1000
-                            + (0 if output[0][3] == '' else int(output[0][3]))) # millisecond
+    try:
+        fullSimulationTime = ((0 if output[0][0] == '' else int(output[0][0])) * 60 * 60 * 1000
+                                + (0 if output[0][1] == '' else int(output[0][1])) * 60 * 1000
+                                + (0 if output[0][2] == '' else int(output[0][2])) * 1000
+                                + (0 if output[0][3] == '' else int(output[0][3]))) # millisecond
+    except IndexError:
+        fullSimulationTime = result[-2][1]
 
-    result[-1][0] = numberSteps +1
+    result[-1][0] = numberSteps + 1
     result[-1][1] = fullSimulationTime
     result[-1][2] = fullSimulationTime - result['time_total[msec]'][-2]
 
