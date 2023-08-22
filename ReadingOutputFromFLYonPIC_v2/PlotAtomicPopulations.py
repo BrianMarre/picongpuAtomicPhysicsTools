@@ -4,6 +4,7 @@ import SCFLY_Reader as readerSCFLY
 import ConfigNumberConversion as conv
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as color
 from tqdm import tqdm
 
 import numpy as np
@@ -207,7 +208,7 @@ def plot_additive(config,
     figure = plt.figure(dpi=300)
     axes = figure.add_subplot(111)
     axes.set_title("AtomicPopulation Data: " + config.dataName)
-    axes.set_xlabel("PIC step")
+    axes.set_xlabel("time[s]")
     axes.set_ylabel("relative abundance, additive")
     axes.set_ylim((0,1.1))
 
@@ -225,7 +226,7 @@ def plot_additive(config,
         ## prepare non standard states data
         if(config.numberStatesToPlot < (numberAtomicStates - 2)):
             # find numberStatesToPlot highest abundance states of the last iteration
-            lastIteration = mean[:,0]
+            lastIteration = mean[:,-1]
             sortedIndexationLastIteration = np.argsort(lastIteration)
             collectionIndicesOfPlotStates = sortedIndexationLastIteration[-numberStatesToPlot:]
 
@@ -271,8 +272,8 @@ def plot_additive(config,
             chargeState = conv.getChargeState(collectionIndex_to_atomicConfigNumber[collectionIndex], config.atomicNumber, config.numLevels)
 
             ### plot mean value
-            axes.plot(timeSteps_FLYonPIC, mean[collectionIndex, :] + offset, drawstyle='steps-mid',
-                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState), linewidth=1, alpha=0.5)
+            axes.plot(timeSteps_FLYonPIC, mean[collectionIndex, :] + offset, linewidth=1, alpha=0.5,
+                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState))
             offset += mean[collectionIndex, :]
 
             ### plot standard deviation
@@ -284,9 +285,8 @@ def plot_additive(config,
             #plot initial state
             ## plot mean value
             chargeState = conv.getChargeState(collectionIndex_to_atomicConfigNumber[collectionIndexInitialMaxAbundanceState], config.atomicNumber, config.numLevels)
-            axes.plot(timeSteps_FLYonPIC, mean[collectionIndexInitialMaxAbundanceState, :] + offset, drawstyle='steps-mid',
-                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState), linewidth=1,
-                      alpha=0.5)
+            axes.plot(timeSteps_FLYonPIC, mean[collectionIndexInitialMaxAbundanceState, :] + offset, linewidth=1, alpha=0.5,
+                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState))
             offset += mean[collectionIndexInitialMaxAbundanceState, :]
             ## plot standard deviation
             axes.bar(timeSteps_FLYonPIC, 2 * stdDev[collectionIndexInitialMaxAbundanceState, :], width=widthBars,
@@ -295,8 +295,8 @@ def plot_additive(config,
 
             # plot other state
             ## plot mean state
-            axes.plot(timeSteps_FLYonPIC, mean_other + offset, drawstyle='steps-mid', color=colorChargeStates[-1],
-                      label="state other", linewidth=1, alpha=0.5)
+            axes.plot(timeSteps_FLYonPIC, mean_other + offset, color=colorChargeStates[-1], linewidth=1, alpha=0.5,
+                      label="state other")
             offset += mean_other
             ## plot standard deviation
             axes.bar(timeSteps_FLYonPIC, 2 * stdDev_other, width=widthBars, bottom = offset - stdDev_other,
@@ -330,8 +330,9 @@ def plot_additive(config,
         for i, configNumber in enumerate(atomicConfigNumbersSorted):
             chargeState = conv.getChargeState(configNumber, config.atomicNumber, config.numLevels)
 
-            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i] + offset, drawstyle='steps-mid',
-                      color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(int(chargeState)), linewidth=1)
+            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i] + offset, linewidth=1, alpha=0.5,
+                      linestyle="--",
+                      color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(int(chargeState)))
 
             offset += atomicPopulationData[:, i]
 
@@ -364,7 +365,7 @@ def plot_absolute(config,
     figure = plt.figure(dpi=300)
     axes = figure.add_subplot(111)
     axes.set_title("AtomicPopulation Data: " + config.dataName)
-    axes.set_xlabel("PIC step")
+    axes.set_xlabel("time[s]")
     axes.set_ylabel("relative abundance")
     axes.set_yscale('log')
     axes.set_ylim((1e-7,1))
@@ -389,8 +390,8 @@ def plot_absolute(config,
             chargeState = conv.getChargeState(collectionIndex_to_atomicConfigNumber[collectionIndex], config.atomicNumber, config.numLevels)
 
             ### plot mean value
-            axes.plot(timeSteps_FLYonPIC, mean[collectionIndex, :], drawstyle='steps-mid',
-                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState), linewidth=1, alpha=0.5)
+            axes.plot(timeSteps_FLYonPIC, mean[collectionIndex, :], linewidth=1, alpha=0.5,
+                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState))
 
             ### plot standard deviation
             axes.bar(timeSteps_FLYonPIC, 2 * stdDev[collectionIndex, :], width=widthBars,
@@ -424,8 +425,8 @@ def plot_absolute(config,
         for i, configNumber in enumerate(atomicConfigNumbersSorted):
             chargeState = conv.getChargeState(configNumber, config.atomicNumber, config.numLevels)
 
-            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i], drawstyle='steps-mid',
-                      color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(int(chargeState)), linewidth=1)
+            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i], linewidth=1, alpha=0.5, linestyle="--",
+                      color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(int(chargeState)))
 
     axes.set_xlim((0,maxTime))
     handles, labels = axes.get_legend_handles_labels()
@@ -435,6 +436,59 @@ def plot_absolute(config,
     print("saving...")
     plt.savefig("AtomicPopulationData_absolute_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
     print()
+
+def plot_DivByState(config, minimumResolution,
+        mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
+        atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+
+    # sort SCFLY states according to primary chargeState, secondary atomicConfigNumber
+    chargeStates = np.fromiter(map(
+        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
+        atomicConfigNumbers), dtype = 'u1')
+    sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
+    del chargeStates
+
+    atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
+    atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
+
+    # check number atomic states is equal
+    assert(np.shape(mean)[0] == np.shape(atomicPopulationData)[1])
+    # check number time steps is equal
+    assert(np.shape(mean)[1] == np.shape(atomicPopulationData)[0])
+
+    numberAtomicStates = np.shape(mean)[0]
+    numberTimeSteps = np.shape(mean)[1]
+
+    SCFLY_data = atomicPopulationDataSorted
+    FLYonPIC_data = np.transpose(mean)
+
+    ## cut diff to resolution limit
+    diff = np.where((SCFLY_data >= minimumResolution), (FLYonPIC_data - SCFLY_data) / SCFLY_data, (FLYonPIC_data - SCFLY_data) / minimumResolution)
+    Y, X = np.meshgrid(np.arange(0,numberAtomicStates), np.arange(0,numberTimeSteps))
+
+    # rescale
+    print("rescale Factor for >0: " + str(np.max(diff)))
+    diff = np.where(diff >= 0, diff/np.max(diff), diff)
+
+    # prepare plot
+    figure = plt.figure(dpi=300, figsize=(20,30))
+    axes = figure.add_subplot(111)
+    title = axes.set_title("AtomicPopulation Data FLYonPIC vs SCFLY: " + config.dataName)
+    axes.set_xlabel("PIC step")
+    axes.set_ylabel("atomic states")
+
+    yticks = np.arange(0, numberAtomicStates)
+    ylabels = list(map(lambda atomicConfigNumber: str(conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)), atomicConfigNumbers))
+    axes.set_yticks(yticks, ylabels)
+    axes.yaxis.set_tick_params(labelsize=2)
+
+    xticks = np.arange(0, numberTimeSteps)[::5]
+    axes.set_xticks(xticks, xticks)
+
+    plt.pcolormesh(X, Y, diff, cmap=plt.cm.RdBu_r, norm=color.SymLogNorm(linthresh=1e-8),)
+    plt.colorbar()
+    figure.tight_layout()
+    plt.savefig("AtomicPopulation_diff" + config.dataName)
 
 class Config:
     def __init__(
@@ -502,10 +556,13 @@ if __name__ == "__main__":
     speciesName_Li = "Li"
 
     # colourmap
-    colorMap = plt.cm.tab20b
-    numColorsInColorMap = 20
+    colorMap_Ar = plt.cm.tab20b
+    numColorsInColorMap_Ar = 20
 
-    loadRaw = True
+    colorMap_Li = plt.cm.tab10
+    numColorsInColorMap_Li = 10
+
+    loadRaw = False
 
     config_30ppc_Ar = Config(
         FLYonPIC_atomicStates_Ar,
@@ -514,8 +571,8 @@ if __name__ == "__main__":
         basePath_30ppc_Ar,
         "",
         numberStatesToPlot_Ar,
-        colorMap,
-        numColorsInColorMap,
+        colorMap_Ar,
+        numColorsInColorMap_Ar,
         speciesName_Ar,
         atomicNumber_Ar,
         numLevels_Ar,
@@ -529,8 +586,8 @@ if __name__ == "__main__":
         basePath_60ppc_Ar,
         "",
         numberStatesToPlot_Ar,
-        colorMap,
-        numColorsInColorMap,
+        colorMap_Ar,
+        numColorsInColorMap_Ar,
         speciesName_Ar,
         atomicNumber_Ar,
         numLevels_Ar,
@@ -544,8 +601,8 @@ if __name__ == "__main__":
         basePath_60ppc_Ar,
         SCFLY_output_Ar,
         numberStatesToPlot_Ar,
-        colorMap,
-        numColorsInColorMap,
+        colorMap_Ar,
+        numColorsInColorMap_Ar,
         speciesName_Ar,
         atomicNumber_Ar,
         numLevels_Ar,
@@ -559,8 +616,8 @@ if __name__ == "__main__":
         "",
         SCFLY_output_Li,
         numberStatesToPlot_Li,
-        colorMap,
-        numColorsInColorMap,
+        colorMap_Li,
+        numColorsInColorMap_Li,
         speciesName_Li,
         atomicNumber_Li,
         numLevels_Li,
@@ -574,17 +631,20 @@ if __name__ == "__main__":
         "",
         SCFLY_output_Ar,
         numberStatesToPlot_Ar,
-        colorMap,
-        numColorsInColorMap,
+        colorMap_Ar,
+        numColorsInColorMap_Ar,
         speciesName_Ar,
         atomicNumber_Ar,
         numLevels_Ar,
         "preProcessedData/",
         "SCFLY_Ar")
 
-    tasks = [config_SCFLY_Li, config_SCFLY_Ar, config_30ppc_Ar, config_60ppc_Ar, config_Ar_FLYonPIC_SCFLY]
+    tasks_general = [config_SCFLY_Li, config_SCFLY_Ar, config_30ppc_Ar, config_60ppc_Ar, config_Ar_FLYonPIC_SCFLY]
+    tasks_diff = [config_Ar_FLYonPIC_SCFLY]
 
-    for config in tasks:
+    minimumResolutionFLYonPIC = 1/1317120
+
+    for config in tasks_general:
         print(config.dataName)
         if loadRaw:
             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
@@ -597,5 +657,18 @@ if __name__ == "__main__":
              mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
              atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
         plot_absolute(config,
+             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
+             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
+
+    for config in tasks_diff:
+        print(config.dataName)
+        if loadRaw:
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
+        else:
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
+
+        plot_DivByState(config, minimumResolutionFLYonPIC,
              mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
              atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
