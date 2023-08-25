@@ -87,7 +87,7 @@ def loadSCFLYdata(config):
         return None, None, None, None
 
     # load state names
-    SCFLY_to_FLYonPIC = readerSCFLY.readSCFLYNames(config.SCFLY_stateNames, config.numLevels, config.atomicNumber)
+    SCFLY_to_FLYonPIC = readerSCFLY.readSCFLYNames(config.SCFLY_stateNames, config.atomicNumber, config.numLevels)
 
     # load data
     atomicPopulationData, axisDict, atomicConfigNumbers, timeData = readerSCFLY.getSCFLY_Data(
@@ -701,7 +701,7 @@ if __name__ == "__main__":
         loadRaw=False)
 
     tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li]#, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
-    tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_diff = []#config_FLYonPIC_60ppc_SCFLY_Ar]
 
     #minimumResolutionFLYonPIC = 1/1317120# for reference only, no longer used
 
