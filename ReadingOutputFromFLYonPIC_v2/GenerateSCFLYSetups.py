@@ -102,8 +102,8 @@ class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
         # create runfile
         with open(self.basePath + self.folderName + "/runfile.txt", "w") as runfile:
             runfile.write(
-                "z " + str(self.atomicNumber)
-                + " 0\n" + "evolve td\n"
+                "z " + str(self.atomicNumber) + " 0\n"
+                + "evolve td\n"
                 + "initial file initialstate\n"
                 + "history iondensity nt\n"
                 + "outfile " + self.outputFileName + "\n"
@@ -172,9 +172,9 @@ if __name__ == "__main__":
         timePoints = np.arange(101) * 3.3e-17, # s
         initialStateLevelVector = (2, 8, 6, 0, 0, 0, 0, 0, 0, 0),
         SCFLYatomicStateNamingFile="/home/marre55/scflyInput/18_atomicStateNaming.input",
-        atomicDataInputFile="/home/marre55/scflyInput/atomic.inp.18",
+        atomicDataInputFile="/home/marre55/scfly/atomicData/FLYCHK_input_files/atomic.inp.18",
         outputFileName = "xout",
-        basePath = "/home/marre55/scflyTools/",
+        basePath = "/home/marre55/scflyInput",
         folderName = "test")
 
     generatedSetup = comparisonFLYonPIC_Ar.get().generateSCFLYSetup()
