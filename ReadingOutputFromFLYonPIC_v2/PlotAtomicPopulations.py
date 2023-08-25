@@ -524,11 +524,41 @@ def plot_StepDiff(plotTimeSteps, config, mean, stdDev, collectionIndex_to_atomic
     plt.tight_layout()
     plt.savefig("AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
 
-"""
-def plot_ExcitationByChargeState(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
-    # one subplot per charge state, for each plot relative abundance of excited states in charge state
-    test = 5
-"""
+def plot_all(tasks_general, tasks_diff):
+    # plot additive and absolute states
+    for config in tasks_general:
+        print(config.dataName)
+        if(config.loadRaw):
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
+        else:
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
+
+        plot_additive(config,
+             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
+             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
+        plot_absolute(config,
+             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
+             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
+
+    # plot diff plots between FLYonPIC and SCFLY
+    for config in tasks_diff:
+        print(config.dataName)
+        if(config.loadRaw):
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
+        else:
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
+
+        plot_DiffByState(config,
+             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
+             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
+        plotStepList = [0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        plot_StepDiff(plotStepList, config,
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
+            atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
 
 class Config:
     def __init__(
@@ -705,35 +735,4 @@ if __name__ == "__main__":
 
     #minimumResolutionFLYonPIC = 1/1317120# for reference only, no longer used
 
-    for config in tasks_general:
-        print(config.dataName)
-        if(config.loadRaw):
-            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
-        else:
-            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
-
-        plot_additive(config,
-             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
-        plot_absolute(config,
-             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
-
-    for config in tasks_diff:
-        print(config.dataName)
-        if(config.loadRaw):
-            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
-        else:
-            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
-
-        plot_DiffByState(config,
-             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
-        plotStepList = [0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-        plot_StepDiff(plotStepList, config,
-            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
-            atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
+    plot_all(tasks_general, tasks_diff)
