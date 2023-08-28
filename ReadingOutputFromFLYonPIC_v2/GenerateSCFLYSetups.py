@@ -49,6 +49,7 @@ def readSCFLYNames(fileName, Z, numLevels):
     return atomicConfigNumber_to_StateName
 
 class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
+    """ optical thin case, no radiation temperature"""
     # Z of element
     atomicNumber : int
     # time points for input and output for/from SCFLY
