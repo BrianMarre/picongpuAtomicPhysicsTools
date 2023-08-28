@@ -3,6 +3,7 @@ import GenerateSCFLYSetups as generator
 import PlotAtomicPopulations as plotter
 
 import matplotlib.pyplot as plt
+import json
 
 electronTemperatures = np.concatenate([np.arange(1,10)*1e2, (np.arange(10)+1)*1e3]) # eV
 ionDensities = np.concatenate([np.arange(1,10)*1e21, (np.arange(10)+1)*1e22]) # 1/cm^3
@@ -17,7 +18,7 @@ atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.
 
 basePath = "/home/marre55/scflyInput/"
 outputFileName = "xout"
-dataSeriesName = "Ar"
+dataSeriesName = "Ar_"
 
 SCFLYBinaryPath = "/home/marre55/scfly/code/exe/scfly"
 
@@ -27,11 +28,14 @@ numberStatesToPlot = 470
 colorMap = plt.cm.tab20b
 numColorsInColorMap = 20
 
+storagePath = "preProcessedData/"
+
 SCFLYconfigs = []
 plotConfigs = []
 
 for i, electronTemperature in enumerate(electronTemperatures):
     for j, ionDensity in enumerate(ionDensities):
+
         # create config for case
         comparisonFLYonPIC_Ar = generator.Config_SCFLY_FLYonPICComparison(
             atomicNumber = atomicNumber,
@@ -73,3 +77,6 @@ for i, electronTemperature in enumerate(electronTemperatures):
 
         # plot SCFLY data
         plotter.plot_all([plotConfig], [])
+
+with open(storagePath + "SCFLY_Configs_" + dataSeriesName + ".list", 'w') as File:
+    json.dump(SCFLYconfigs, File)

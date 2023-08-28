@@ -329,16 +329,17 @@ def plot_additive(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
 
         print("plotting SCFLY additive ...")
 
-        offset = 0
+        offset = np.cumsum(atomicPopulationDataSorted, axis=1)
+        offset[:,1:] = offset[:,:-1]
+        offset[:, 0] = 0
+
         # for each atomic state
         for i, configNumber in enumerate(atomicConfigNumbersSorted):
             chargeState = conv.getChargeState(configNumber, config.atomicNumber, config.numLevels)
 
-            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i] + offset, linewidth=1, alpha=0.5,
+            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i] + offset[:, i], linewidth=1, alpha=0.5,
                       linestyle="--",
                       color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(int(chargeState)))
-
-            offset += atomicPopulationData[:, i]
 
     axes.set_xlim((0,maxTime))
     handles, labels = axes.get_legend_handles_labels()
@@ -736,7 +737,5 @@ if __name__ == "__main__":
 
     tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li]#, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
     tasks_diff = []#config_FLYonPIC_60ppc_SCFLY_Ar]
-
-    #minimumResolutionFLYonPIC = 1/1317120# for reference only, no longer used
 
     plot_all(tasks_general, tasks_diff)
