@@ -53,7 +53,7 @@ for i, electronTemperature in enumerate(electronTemperatures):
         SCFLYconfigs.append(comparisonFLYonPIC_Ar)
 
         # generate setup and execute SCFLY
-        comparisonFLYonPIC_Ar.get().generateSCFLYSetup().execute(SCFLYBinaryPath)
+        #comparisonFLYonPIC_Ar.get().generateSCFLYSetup().execute(SCFLYBinaryPath)
 
         # create plotting config
         plotConfig = plotter.Config(
@@ -76,7 +76,7 @@ for i, electronTemperature in enumerate(electronTemperatures):
         plotConfigs.append(plotConfig)
 
         # plot SCFLY data
-        plotter.plot_all([plotConfig], [])
+        #plotter.plot_all([plotConfig], [])
 
-with open(storagePath + "SCFLY_Configs_" + dataSeriesName + ".list", 'w') as File:
-    json.dump(SCFLYconfigs, File)
+print(electronTemperatures)
+print(ionDensities)
