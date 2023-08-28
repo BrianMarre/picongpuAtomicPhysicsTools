@@ -347,6 +347,7 @@ def plot_additive(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
 
     print("saving...")
     plt.savefig("AtomicPopulationData_additive_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(figure)
     print()
 
 def plot_absolute(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
@@ -427,6 +428,7 @@ def plot_absolute(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
 
     print("saving...")
     plt.savefig("AtomicPopulationData_absolute_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(figure)
     print()
 
 def sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData):
@@ -483,6 +485,7 @@ def plot_DiffByState(config, mean, stdDev, collectionIndex_to_atomicConfigNumber
     plt.colorbar()
     figure.tight_layout()
     plt.savefig("AtomicPopulation_diff_" + config.dataName)
+    plt.close(figure)
 
 def plot_StepDiff(plotTimeSteps, config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
 
@@ -523,6 +526,7 @@ def plot_StepDiff(plotTimeSteps, config, mean, stdDev, collectionIndex_to_atomic
     print("saving...")
     plt.tight_layout()
     plt.savefig("AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
+    plt.close(figure)
 
 def plot_all(tasks_general, tasks_diff):
     # plot additive and absolute states

@@ -6,7 +6,17 @@ import ConfigNumberConversion as conv
 import os
 import shutil
 import subprocess
-import time
+
+""" @file generates and runs SCFLY simulations
+
+    Basic Workflow:
+    1.) create Config instance for SCFLY simulation
+    2.) call get()method on it to convert to a BaseConfig instance for SCFLY
+    3.) call generateSCFLYSetup() on BaseConfig instance to generate a SCFLY setup
+    4.) call execute() on previously generated BaseConfig to run SCFLY simulation setup
+
+    see `if __name__=="__main__":` for example
+"""
 
 def readSCFLYNames(fileName, Z, numLevels):
     """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
@@ -16,7 +26,7 @@ def readSCFLYNames(fileName, Z, numLevels):
     @param fileName path of file describing SCFLY atomic states,
         file must give in each line name of one state and occupation number for each shell for state
 
-        Exp.: h_10001 1 0 0 0 0 0 0 0 0 0\n ...
+        Exp.: h_10001 1  0  0  0  0  0  0  0  0  0\n ...
     @param Z atomic number of the element for which atomic states are contained
     @param numLevels number of shells included in the data set
 
@@ -49,14 +59,14 @@ def readSCFLYNames(fileName, Z, numLevels):
     return atomicConfigNumber_to_StateName
 
 class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
-    """ optical thin case, no radiation temperature"""
+    """BaseConfig for creating optical thin, no radiation temperature, time dependent SCFLY simulations"""
     # Z of element
     atomicNumber : int
     # time points for input and output for/from SCFLY
     timePoints : list[float]
-    # constant number density of ions, 1/cm^3
+    # number density of ions over time, 1/cm^3
     ionDensity : list[float]
-    # electron temperature, eV
+    # electron temperature over time, eV
     electronTemperature : list[float]
     # list of atomicStates, by SCFLY Name, and starting fraction for each state
     initialCondition : list[tuple[str, float]]
@@ -64,20 +74,21 @@ class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
     minChargeState : int
     # maximum charge state to include in calculation
     maxChargeState : int
-    # number of atomic shells to include in calculation
+    # number of atomic shells to include in calculation, <=10
     numLevels : int
-    # path to SCFLY atomicData input file
+    # path to SCFLY atomicData input file, will be copied to SCFLY setup directory
     atomicDataInputFile : str
     # output file name, written by SCFLY, @attention will overwrite existing files
     outputFileName : str
-    # generated setup
-    generated : bool = False
+    # whether setup has been generated already
+    _generated : bool = False
     # basePath for scfly setup, path to folder containing scfly setups
     basePath : str
     # name of folder containing the generated SCFLY setup
     folderName : str
 
     def get(self):
+        """convert Config to BaseConfig"""
         return self
 
     def generateSCFLYSetup(self):
@@ -112,17 +123,22 @@ class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
                 + "end\n")
 
         # mark as generated
-        self.generated = True
+        self._generated = True
         return self
 
     def execute(self, SCFLYBinaryPath: str):
-        assert(self.generated), "setup must be generated before executing"
+        """run scfly"""
+        # check setup previously generated
+        assert(self._generated), "setup must be generated before executing"
 
+        # print location to console
         print(["cd "+ self.basePath + self.folderName, "&&", SCFLYBinaryPath, "runfile.txt",
                         "&&", "cd /home/marre55/scflyTools"])
+
         subprocess.run([SCFLYBinaryPath, "runfile.txt"], cwd=(self.basePath+self.folderName))
 
 class Config_SCFLY_FLYonPICComparison(pydantic.BaseModel):
+    """configuration for SCFLY simulations for comparison to FLYonPIC simulations"""
     # Z of element
     atomicNumber : int
     # constant electron temperature, eV
@@ -145,6 +161,7 @@ class Config_SCFLY_FLYonPICComparison(pydantic.BaseModel):
     folderName : str
 
     def get(self) -> BaseConfig_SCFLY_TimeDependent:
+        """convert Config to BaseConfig"""
         # determine  number of levels to track form input
         numLevels = len(self.initialStateLevelVector)
 
@@ -166,6 +183,9 @@ class Config_SCFLY_FLYonPICComparison(pydantic.BaseModel):
             folderName = self.folderName)
 
 if __name__ == "__main__":
+    # example of use
+
+    # create config object
     comparisonFLYonPIC_Ar = Config_SCFLY_FLYonPICComparison(
         atomicNumber = 18,
         electronTemperature = 1e3, # eV
@@ -178,5 +198,8 @@ if __name__ == "__main__":
         basePath = "/home/marre55/scflyInput",
         folderName = "test")
 
+    # convert ConfigObject to BaseConfig and generate SCFLY setup from BaseConfig
     generatedSetup = comparisonFLYonPIC_Ar.get().generateSCFLYSetup()
+
+    # run SCFLY for setup
     generatedSetup.execute("/home/marre55/scfly/code/exe/scfly")
