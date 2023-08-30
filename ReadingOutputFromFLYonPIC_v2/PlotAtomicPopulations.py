@@ -31,16 +31,16 @@ def sortSCFLYDataAccordingToFLYonPIC(config : cfg.AtomicPopulationPlotConfig, at
 
 @typeguard.typechecked
 def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
-    if(config.FLYonPIC_atomicStates == ""):
+    if(config.FLYonPICAtomicStateInputDataFile == ""):
         print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
         return None, None, None, None
-    if(len(config.FLYonPIC_fileNames) == 0):
+    if(len(config.FLYonPICOutputFileNames) == 0):
         print("SKIPPING FLYonPIC: missing FLYonPIC_fileNames")
         return None, None, None, None
 
     # load atomic input Data for common indexation of atomic states
     atomicStates = np.loadtxt(
-        config.FLYonPIC_atomicStates, dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
+        config.FLYonPICAtomicStateInputDataFile, dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
 
     state_to_collectionIndex = {}
     collectionIndex_to_atomicConfigNumber = {}
@@ -53,12 +53,12 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     # load in FLYonPIC data
     sampleListAtomicPopulationData = []
     sampleListTimeSteps = []
-    for fileName in config.FLYonPIC_fileNames:
-        sampleAtomicPopulationData, sampleTimeSteps = readerOpenPMD.getAtomicPopulationData(config.FLYonPIC_basePath + fileName, config.speciesName)
+    for fileName in config.FLYonPICOutputFileNames:
+        sampleAtomicPopulationData, sampleTimeSteps = readerOpenPMD.getAtomicPopulationData(config.FLYonPICBasePath + fileName, config.speciesName)
         sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
         sampleListTimeSteps.append(sampleTimeSteps)
 
-    numberSamples = len(config.FLYonPIC_fileNames)
+    numberSamples = len(config.FLYonPICOutputFileNames)
     numberAtomicStates = len(state_to_collectionIndex.keys())
     numberIterations = len(sampleListTimeSteps[0])
 
@@ -97,19 +97,20 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
 
 @typeguard.typechecked
 def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
-    if(config.SCFLY_stateNames == ""):
+    if(config.SCFLYatomicStateNamingFile == ""):
         print("SKIPPING SCFLY: missing SCFLY_stateNames file")
         return None, None, None, None
-    if(config.SCFLY_output == ""):
+    if(config.SCFLYOutputFileName == ""):
         print("SKIPPING SCFLY: missing SCFLY_output file")
         return None, None, None, None
 
     # load state names
-    SCFLY_to_FLYonPIC, = readerSCFLY.readSCFLYNames(config.SCFLY_stateNames, config.atomicNumber, config.numLevels)
+    SCFLY_to_FLYonPIC, temp = readerSCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)
+    del temp
 
     # load data
     atomicPopulationData, axisDict, atomicConfigNumbers, timeData = readerSCFLY.getSCFLY_Data(
-        config.SCFLY_output, SCFLY_to_FLYonPIC)
+        config.SCFLYOutputFileName, SCFLY_to_FLYonPIC)
 
     # calculate total densities
     assert((len(np.shape(atomicPopulationData)) == 2) and (axisDict['timeStep'] == 0))
@@ -162,13 +163,13 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
     """load previously processed atomic population data from file"""
 
     ## FLYonPIC
-    if(config.FLYonPIC_atomicStates == ""):
+    if(config.FLYonPICAtomicStateInputDataFile == ""):
         print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
         mean = None
         stdDev = None
         timeSteps_FLYonPIC = None
         collectionIndex_to_atomicConfigNumber = None
-    elif(len(config.FLYonPIC_fileNames) == 0):
+    elif(len(config.FLYonPICOutputFileNames) == 0):
         print("SKIPPING FLYonPIC: missing FLYonPIC_fileNames")
         mean = None
         stdDev = None
@@ -187,13 +188,13 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
             collectionIndex_to_atomicConfigNumber[int(key)] = value
 
     ## SCFLY
-    if(config.SCFLY_stateNames == ""):
+    if(config.SCFLYatomicStateNamingFile == ""):
         print("SKIPPING SCFLY: missing SCFLY_stateNames file")
         atomicPopulationData = None
         axisDict = None
         atomicConfigNumbers = None
         timeSteps_SCFLY = None
-    elif(config.SCFLY_output == ""):
+    elif(config.SCFLYOutputFileName == ""):
         print("SKIPPING SCFLY: missing SCFLY_output file")
         atomicPopulationData = None
         axisDict = None
@@ -588,13 +589,13 @@ if __name__ == "__main__":
     speciesName_Li = "Li"
 
     # colourmap
-    colorMap_Ar = ´.cm.tab20b
+    colorMap_Ar = plt.cm.tab20b
     numColorsInColorMap_Ar = 20
 
     colorMap_Li = plt.cm.tab10
     numColorsInColorMap_Li = 10
 
-    config_FLYonPIC_30ppc_Ar = AtomicPopulationPlotConfig(
+    config_FLYonPIC_30ppc_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
         SCFLYatomicStateNamingFile =        "",
         FLYonPICOutputFileNames =           fileNames_30ppc_Ar,
@@ -610,7 +611,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_30ppc_Ar",
         loadRaw =                           False)
 
-    config_FLYonPIC_60ppc_Ar = AtomicPopulationPlotConfig(
+    config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
         SCFLYatomicStateNamingFile =        "",
         FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
@@ -626,7 +627,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_60ppc_Ar",
         loadRaw =                           False)
 
-    config_FLYonPIC_60ppc_SCFLY_Ar = AtomicPopulationPlotConfig(
+    config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
         FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
@@ -642,7 +643,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
         loadRaw =                           False)
 
-    config_SCFLY_Ar = AtomicPopulationPlotConfig(
+    config_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
         FLYonPICOutputFileNames =           [],
@@ -658,7 +659,7 @@ if __name__ == "__main__":
         dataName =                          "SCFLY_Ar",
         loadRaw =                           False)
 
-    config_FLYonPIC_30ppc_SCFLY_Li = AtomicPopulationPlotConfig(
+    config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
         FLYonPICOutputFileNames =           fileNames_30ppc_Li,
@@ -674,7 +675,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_30ppc_SCFLY_Li",
         loadRaw =                           True)
 
-    config_SCFLY_Li = AtomicPopulationPlotConfig(
+    config_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
         FLYonPICOutputFileNames =           [],
@@ -690,7 +691,7 @@ if __name__ == "__main__":
         dataName =                          "SCFLY_Li",
         loadRaw =                           False)
 
-    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
     tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
 
     plot_all(tasks_general, tasks_diff)
