@@ -18,46 +18,6 @@ import subprocess
     see `if __name__=="__main__":` for example
 """
 
-def readSCFLYNames(fileName, Z, numLevels):
-    """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
-
-    @attention states must be uniquely described by their shell occupation number vector!
-
-    @param fileName path of file describing SCFLY atomic states,
-        file must give in each line name of one state and occupation number for each shell for state
-
-        Exp.: h_10001 1  0  0  0  0  0  0  0  0  0\n ...
-    @param Z atomic number of the element for which atomic states are contained
-    @param numLevels number of shells included in the data set
-
-     @returns dict of {SCFLYname : FLYonPIC_atomicConfigNumber}
-    """
-
-    # prepare result datatype description
-    occupationNumberCollums = []
-    ids = []
-    for i in range(numLevels):
-        occupationNumberCollums.append((str(i), 'u1'))
-        ids.append(str(i))
-
-    dtype = [("state", 'U10')]
-    dtype.extend(occupationNumberCollums)
-
-    # load file content
-    conversionTable = np.loadtxt(fileName, dtype=dtype)
-
-    # create translation dictionary
-    configNumbers = []
-    for levelVector in conversionTable[ids]:
-         configNumbers.append(conv.getConfigNumber(levelVector, Z))
-
-    atomicConfigNumber_to_StateName = dict(zip(configNumbers, conversionTable["state"]))
-
-    # add completely ionized state by hand
-    atomicConfigNumber_to_StateName[0] = str(Z)+"+"
-
-    return atomicConfigNumber_to_StateName
-
 class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
     """BaseConfig for creating optical thin, no radiation temperature, time dependent SCFLY simulations"""
     # Z of element
@@ -166,7 +126,7 @@ class Config_SCFLY_FLYonPICComparison(pydantic.BaseModel):
         numLevels = len(self.initialStateLevelVector)
 
         # get translation from FLYonPIC to SCFLY
-        atomicConfigNumber_to_StateName = readSCFLYNames(self.SCFLYatomicStateNamingFile, self.atomicNumber, numLevels)
+        , atomicConfigNumber_to_StateName = readSCFLYNames(self.SCFLYatomicStateNamingFile, self.atomicNumber, numLevels)
 
         return BaseConfig_SCFLY_TimeDependent(
             atomicNumber = self.atomicNumber,

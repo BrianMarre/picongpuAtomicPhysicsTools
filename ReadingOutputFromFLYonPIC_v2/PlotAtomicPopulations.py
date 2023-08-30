@@ -1,7 +1,10 @@
+import typeguard
+
 import openPMD_Reader as readerOpenPMD
 import SCFLY_Reader as readerSCFLY
-
 import ConfigNumberConversion as conv
+import AtomicPopulationPlotConfig as cfg
+import ChargeStateColors
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
@@ -13,7 +16,21 @@ import math
 
 import json
 
-def loadFLYonPICData(config):
+@typeguard.typechecked
+def sortSCFLYDataAccordingToFLYonPIC(config : cfg.AtomicPopulationPlotConfig, atomicConfigNumbers, atomicPopulationData):
+    """sort SCFLY states according to primary chargeState, secondary atomicConfigNumber"""
+    chargeStates = np.fromiter(map(
+        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
+        atomicConfigNumbers), dtype = 'u1')
+    sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
+    del chargeStates
+
+    atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
+    atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
+    return atomicConfigNumbersSorted, atomicPopulationDataSorted
+
+@typeguard.typechecked
+def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     if(config.FLYonPIC_atomicStates == ""):
         print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
         return None, None, None, None
@@ -78,7 +95,8 @@ def loadFLYonPICData(config):
 
     return mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps
 
-def loadSCFLYdata(config):
+@typeguard.typechecked
+def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
     if(config.SCFLY_stateNames == ""):
         print("SKIPPING SCFLY: missing SCFLY_stateNames file")
         return None, None, None, None
@@ -87,7 +105,7 @@ def loadSCFLYdata(config):
         return None, None, None, None
 
     # load state names
-    SCFLY_to_FLYonPIC = readerSCFLY.readSCFLYNames(config.SCFLY_stateNames, config.atomicNumber, config.numLevels)
+    SCFLY_to_FLYonPIC, = readerSCFLY.readSCFLYNames(config.SCFLY_stateNames, config.atomicNumber, config.numLevels)
 
     # load data
     atomicPopulationData, axisDict, atomicConfigNumbers, timeData = readerSCFLY.getSCFLY_Data(
@@ -102,7 +120,8 @@ def loadSCFLYdata(config):
 
     return atomicPopulationData, axisDict, atomicConfigNumbers, timeData
 
-def preProcess(config):
+@typeguard.typechecked
+def preProcess(config : cfg.AtomicPopulationPlotConfig):
     """pre process raw data, store pre processed data at config specified path and return preprocessed data"""
     mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC = loadFLYonPICData(config)
     atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadSCFLYdata(config)
@@ -138,8 +157,9 @@ def preProcess(config):
     return mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
         atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY
 
-def loadPreProcessed(config):
-    """load pre-processed data from file"""
+@typeguard.typechecked
+def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
+    """load previously processed atomic population data from file"""
 
     ## FLYonPIC
     if(config.FLYonPIC_atomicStates == ""):
@@ -189,24 +209,10 @@ def loadPreProcessed(config):
     return mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
         atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY
 
-def getChargeStateColors(config):
-
-    colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
-
-    ## assign all chargeStates a color
-    colorChargeStates = {}
-    for z in range(config.atomicNumber + 1):
-        try:
-            colorChargeStates[z] = next(colors)
-        except StopIteration:
-            colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
-            colorChargeStates[z] = next(colors)
-
-    return colorChargeStates
-
-def plot_additive(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
-
-    colorChargeStates = getChargeStateColors(config)
+@typeguard.typechecked
+def plot_additive(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+    """plot atomic populations as stacked line plot on linear scale"""
+    colorChargeStates = ChargeStateColors.getChargeStateColors(config)
 
     # prepare plot
     figure = plt.figure(dpi=300)
@@ -318,14 +324,9 @@ def plot_additive(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
         numberIterations_SCFLY = np.shape(timeSteps_SCFLY)[0]
 
         # sort states according to primary chargeState, secondary atomicConfigNumber
-        chargeStates = np.fromiter(map(
-            lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
-            atomicConfigNumbers), dtype = 'u1')
-        sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
-        del chargeStates
-
-        atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
-        atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
+        atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
+        del atomicConfigNumbers
+        del atomicPopulationData
 
         print("plotting SCFLY additive ...")
 
@@ -351,9 +352,10 @@ def plot_additive(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
     plt.close(figure)
     print()
 
-def plot_absolute(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
-
-    colorChargeStates = getChargeStateColors(config)
+@typeguard.typechecked
+def plot_absolute(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+    """plot atomic populations on logarithmic scale"""
+    colorChargeStates = ChargeStateColors.getChargeStateColors(config)
 
     # prepare plot
     figure = plt.figure(dpi=300)
@@ -404,14 +406,9 @@ def plot_absolute(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
         numberIterations_SCFLY = np.shape(timeSteps_SCFLY)[0]
 
         # sort states according to primary chargeState, secondary atomicConfigNumber
-        chargeStates = np.fromiter(map(
-            lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
-            atomicConfigNumbers), dtype = 'u1')
-        sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
-        del chargeStates
-
-        atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
-        atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
+        atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
+        del atomicConfigNumbers
+        del atomicPopulationData
 
         print("plotting SCFLY absolute ...")
 
@@ -432,19 +429,9 @@ def plot_absolute(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, t
     plt.close(figure)
     print()
 
-def sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData):
-    """sort SCFLY states according to primary chargeState, secondary atomicConfigNumber"""
-    chargeStates = np.fromiter(map(
-        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
-        atomicConfigNumbers), dtype = 'u1')
-    sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
-    del chargeStates
-
-    atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
-    atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
-    return atomicConfigNumbersSorted, atomicPopulationDataSorted
-
-def plot_DiffByState(config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+@typeguard.typechecked
+def plot_DiffByState(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+    """plot difference (FLYonPIC - SCFLY) for each atomic state and each step"""
     atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
     del atomicConfigNumbers
     del atomicPopulationData
@@ -488,7 +475,7 @@ def plot_DiffByState(config, mean, stdDev, collectionIndex_to_atomicConfigNumber
     plt.savefig("AtomicPopulation_diff_" + config.dataName)
     plt.close(figure)
 
-def plot_StepDiff(plotTimeSteps, config, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+def plot_StepDiff(plotTimeSteps, config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
 
     atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
     del atomicConfigNumbers
@@ -529,7 +516,7 @@ def plot_StepDiff(plotTimeSteps, config, mean, stdDev, collectionIndex_to_atomic
     plt.savefig("AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
     plt.close(figure)
 
-def plot_all(tasks_general, tasks_diff):
+def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : list[cfg.AtomicPopulationPlotConfig]):
     # plot additive and absolute states
     for config in tasks_general:
         print(config.dataName)
@@ -538,7 +525,7 @@ def plot_all(tasks_general, tasks_diff):
                 atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
         else:
             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadProcessed(config)
 
         plot_additive(config,
              mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
@@ -555,7 +542,7 @@ def plot_all(tasks_general, tasks_diff):
                 atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
         else:
             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadPreProcessed(config)
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadProcessed(config)
 
         plot_DiffByState(config,
              mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
@@ -564,38 +551,6 @@ def plot_all(tasks_general, tasks_diff):
         plot_StepDiff(plotStepList, config,
             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
-
-class Config:
-    def __init__(
-        self,
-        FLYonPIC_atomicStates,
-        SCFLY_stateNames,
-        FLYonPIC_fileNames,
-        FLYonPIC_basePath,
-        SCFLY_output,
-        numberStatesToPlot,
-        colorMap,
-        numColorsInColorMap,
-        speciesName,
-        atomicNumber,
-        numLevels,
-        processedDataStoragePath,
-        dataName,
-        loadRaw):
-        self.FLYonPIC_atomicStates = FLYonPIC_atomicStates
-        self.SCFLY_stateNames = SCFLY_stateNames
-        self.FLYonPIC_fileNames = FLYonPIC_fileNames
-        self.FLYonPIC_basePath = FLYonPIC_basePath
-        self.SCFLY_output = SCFLY_output
-        self.speciesName = speciesName
-        self.atomicNumber = atomicNumber
-        self.numLevels = numLevels
-        self.numberStatesToPlot = numberStatesToPlot
-        self.colorMap = colorMap
-        self.numColorsInColorMap = numColorsInColorMap
-        self.processedDataStoragePath = processedDataStoragePath
-        self.dataName = dataName
-        self.loadRaw = loadRaw
 
 if __name__ == "__main__":
     # base paths to FLYonPIC simulation openPMD output
@@ -633,109 +588,109 @@ if __name__ == "__main__":
     speciesName_Li = "Li"
 
     # colourmap
-    colorMap_Ar = plt.cm.tab20b
+    colorMap_Ar = ´.cm.tab20b
     numColorsInColorMap_Ar = 20
 
     colorMap_Li = plt.cm.tab10
     numColorsInColorMap_Li = 10
 
-    config_FLYonPIC_30ppc_Ar = Config(
-        FLYonPIC_atomicStates_Ar,
-        "",
-        fileNames_30ppc_Ar,
-        basePath_30ppc_Ar,
-        "",
-        numberStatesToPlot_Ar,
-        colorMap_Ar,
-        numColorsInColorMap_Ar,
-        speciesName_Ar,
-        atomicNumber_Ar,
-        numLevels_Ar,
-        "preProcessedData/",
-        "FLYonPIC_30ppc_Ar",
-        loadRaw=False)
+    config_FLYonPIC_30ppc_Ar = AtomicPopulationPlotConfig(
+        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
+        SCFLYatomicStateNamingFile =        "",
+        FLYonPICOutputFileNames =           fileNames_30ppc_Ar,
+        FLYonPICBasePath =                  basePath_30ppc_Ar,
+        SCFLYOutputFileName =               "",
+        numberStatesToPlot =                numberStatesToPlot_Ar,
+        colorMap =                          colorMap_Ar,
+        numColorsInColorMap =               numColorsInColorMap_Ar,
+        speciesName =                       speciesName_Ar,
+        atomicNumber=                       atomicNumber_Ar,
+        numLevels =                         numLevels_Ar,
+        processedDataStoragePath =          "preProcessedData/",
+        dataName =                          "FLYonPIC_30ppc_Ar",
+        loadRaw =                           False)
 
-    config_FLYonPIC_60ppc_Ar = Config(
-        FLYonPIC_atomicStates_Ar,
-        "",
-        fileNames_60ppc_Ar,
-        basePath_60ppc_Ar,
-        "",
-        numberStatesToPlot_Ar,
-        colorMap_Ar,
-        numColorsInColorMap_Ar,
-        speciesName_Ar,
-        atomicNumber_Ar,
-        numLevels_Ar,
-        "preProcessedData/",
-        "FLYonPIC_60ppc_Ar",
-        loadRaw=False)
+    config_FLYonPIC_60ppc_Ar = AtomicPopulationPlotConfig(
+        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
+        SCFLYatomicStateNamingFile =        "",
+        FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
+        FLYonPICBasePath =                  basePath_60ppc_Ar,
+        SCFLYOutputFileName =               "",
+        numberStatesToPlot =                numberStatesToPlot_Ar,
+        colorMap =                          colorMap_Ar,
+        numColorsInColorMap =               numColorsInColorMap_Ar,
+        speciesName =                       speciesName_Ar,
+        atomicNumber=                       atomicNumber_Ar,
+        numLevels =                         numLevels_Ar,
+        processedDataStoragePath =          "preProcessedData/",
+        dataName =                          "FLYonPIC_60ppc_Ar",
+        loadRaw =                           False)
 
-    config_FLYonPIC_60ppc_SCFLY_Ar = Config(
-        FLYonPIC_atomicStates_Ar,
-        SCFLY_stateNames_Ar,
-        fileNames_60ppc_Ar,
-        basePath_60ppc_Ar,
-        SCFLY_output_Ar,
-        numberStatesToPlot_Ar,
-        colorMap_Ar,
-        numColorsInColorMap_Ar,
-        speciesName_Ar,
-        atomicNumber_Ar,
-        numLevels_Ar,
-        "preProcessedData/",
-        "FLYonPIC_60ppc_SCFLY_Ar",
-        loadRaw=False)
+    config_FLYonPIC_60ppc_SCFLY_Ar = AtomicPopulationPlotConfig(
+        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
+        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
+        FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
+        FLYonPICBasePath =                  basePath_60ppc_Ar,
+        SCFLYOutputFileName =               SCFLY_output_Ar,
+        numberStatesToPlot =                numberStatesToPlot_Ar,
+        colorMap =                          colorMap_Ar,
+        numColorsInColorMap =               numColorsInColorMap_Ar,
+        speciesName =                       speciesName_Ar,
+        atomicNumber=                       atomicNumber_Ar,
+        numLevels =                         numLevels_Ar,
+        processedDataStoragePath =          "preProcessedData/",
+        dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
+        loadRaw =                           False)
 
-    config_SCFLY_Ar = Config(
-        "",
-        SCFLY_stateNames_Ar,
-        [],
-        "",
-        SCFLY_output_Ar,
-        numberStatesToPlot_Ar,
-        colorMap_Ar,
-        numColorsInColorMap_Ar,
-        speciesName_Ar,
-        atomicNumber_Ar,
-        numLevels_Ar,
-        "preProcessedData/",
-        "SCFLY_Ar",
-        loadRaw=False)
+    config_SCFLY_Ar = AtomicPopulationPlotConfig(
+        FLYonPICAtomicStateInputDataFile =  "",
+        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
+        FLYonPICOutputFileNames =           [],
+        FLYonPICBasePath =                  "",
+        SCFLYOutputFileName =               SCFLY_output_Ar,
+        numberStatesToPlot =                numberStatesToPlot_Ar,
+        colorMap =                          colorMap_Ar,
+        numColorsInColorMap =               numColorsInColorMap_Ar,
+        speciesName =                       speciesName_Ar,
+        atomicNumber=                       atomicNumber_Ar,
+        numLevels =                         numLevels_Ar,
+        processedDataStoragePath =          "preProcessedData/",
+        dataName =                          "SCFLY_Ar",
+        loadRaw =                           False)
 
-    config_FLYonPIC_30ppc_SCFLY_Li = Config(
-        FLYonPIC_atomicStates_Li,
-        SCFLY_stateNames_Li,
-        fileNames_30ppc_Li,
-        basePath_30ppc_Li,
-        SCFLY_output_Li,
-        numberStatesToPlot_Li,
-        colorMap_Li,
-        numColorsInColorMap_Li,
-        speciesName_Li,
-        atomicNumber_Li,
-        numLevels_Li,
-        "preProcessedData/",
-        "FLYonPIC_30ppc_SCFLY_Li",
-        loadRaw=True)
+    config_FLYonPIC_30ppc_SCFLY_Li = AtomicPopulationPlotConfig(
+        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
+        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
+        FLYonPICOutputFileNames =           fileNames_30ppc_Li,
+        FLYonPICBasePath =                  basePath_30ppc_Li,
+        SCFLYOutputFileName =               SCFLY_output_Li,
+        numberStatesToPlot =                numberStatesToPlot_Li,
+        colorMap =                          colorMap_Li,
+        numColorsInColorMap =               numColorsInColorMap_Li,
+        speciesName =                       speciesName_Li,
+        atomicNumber=                       atomicNumber_Li,
+        numLevels =                         numLevels_Li,
+        processedDataStoragePath =          "preProcessedData/",
+        dataName =                          "FLYonPIC_30ppc_SCFLY_Li",
+        loadRaw =                           True)
 
-    config_SCFLY_Li = Config(
-        "",
-        SCFLY_stateNames_Li,
-        [],
-        "",
-        SCFLY_output_Li,
-        numberStatesToPlot_Li,
-        colorMap_Li,
-        numColorsInColorMap_Li,
-        speciesName_Li,
-        atomicNumber_Li,
-        numLevels_Li,
-        "preProcessedData/",
-        "SCFLY_Li",
-        loadRaw=False)
+    config_SCFLY_Li = AtomicPopulationPlotConfig(
+        FLYonPICAtomicStateInputDataFile =  "",
+        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
+        FLYonPICOutputFileNames =           [],
+        FLYonPICBasePath =                  "",
+        SCFLYOutputFileName =               SCFLY_output_Li,
+        numberStatesToPlot =                numberStatesToPlot_Li,
+        colorMap =                          colorMap_Li,
+        numColorsInColorMap =               numColorsInColorMap_Li,
+        speciesName =                       speciesName_Li,
+        atomicNumber=                       atomicNumber_Li,
+        numLevels =                         numLevels_Li,
+        processedDataStoragePath =          "preProcessedData/",
+        dataName =                          "SCFLY_Li",
+        loadRaw =                           False)
 
-    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li]#, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
-    tasks_diff = []#config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
 
     plot_all(tasks_general, tasks_diff)
