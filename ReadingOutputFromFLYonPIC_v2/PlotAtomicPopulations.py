@@ -1,5 +1,3 @@
-import typeguard
-
 import openPMD_Reader as readerOpenPMD
 import SCFLY_Reader as readerSCFLY
 import ConfigNumberConversion as conv
@@ -9,11 +7,11 @@ import ChargeStateColors
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
 import matplotlib.scale as scale
-from tqdm import tqdm
 
+import typeguard
+from tqdm import tqdm
 import numpy as np
 import math
-
 import json
 
 @typeguard.typechecked
@@ -476,7 +474,8 @@ def plot_DiffByState(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, coll
     plt.savefig("AtomicPopulation_diff_" + config.dataName)
     plt.close(figure)
 
-def plot_StepDiff(plotTimeSteps, config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+@typeguard.typechecked
+def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
 
     atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
     del atomicConfigNumbers
@@ -517,7 +516,106 @@ def plot_StepDiff(plotTimeSteps, config : cfg.AtomicPopulationPlotConfig, mean, 
     plt.savefig("AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
     plt.close(figure)
 
-def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : list[cfg.AtomicPopulationPlotConfig]):
+@typeguard.typechecked
+def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPICInitialChargeState : int, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+    """plot SCFLY charge state populations below FLYonPIC initial charge state over time"""
+
+    # prepare plot
+    figure = plt.figure(dpi=300)
+    axes = figure.add_subplot(111)
+    axes.set_title("RecombinationPlot: " + config.dataName)
+    axes.set_xlabel("time[s]")
+    axes.set_ylabel("relative abundance")
+    axes.set_yscale('log')
+    axes.set_ylim((1e-7,1))
+
+    maxTime = np.max(timeSteps_SCFLY)
+
+    # number Iterations
+    numberIterations_SCFLY = np.shape(timeSteps_SCFLY)[0]
+    numberAtomicStates = np.shape(atomicPopulationData)[1]
+
+    # sort states according to primary chargeState, secondary atomicConfigNumber
+    atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
+    del atomicConfigNumbers
+    del atomicPopulationData
+    chargeStates = np.fromiter(map(lambda atomicConfigNumber: conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels), atomicConfigNumbersSorted), dtype='u1')
+
+    #sum atomic states for each charge states below FLYonPIC charge state
+    belowFLYonPICInitial = np.zeros((numberIterations_SCFLY, FLYonPICInitialChargeState))
+    firstIndexInitialChargeState = 0
+    for i in range(numberAtomicStates):
+        chargeState = chargeStates[i]
+
+        if chargeState < FLYonPICInitialChargeState:
+            belowFLYonPICInitial[:, chargeState] += atomicPopulationDataSorted[:, i]
+            firstIndexInitialChargeState = i+1
+        elif chargeState == FLYonPICInitialChargeState:
+            break
+
+    # sum all atomic states above initial charge state
+    aboveFLYonPICInitial = np.zeros(numberIterations_SCFLY)
+    lastIndexInitialChargeState = firstIndexInitialChargeState
+    for i in range(firstIndexInitialChargeState, numberAtomicStates):
+        chargeState = chargeStates[i]
+        if chargeState == FLYonPICInitialChargeState:
+            lastIndexInitialChargeState = i
+        if chargeState > FLYonPICInitialChargeState:
+            aboveFLYonPICInitial += atomicPopulationDataSorted[:, i]
+
+    print("plotting SCFLY recombination importance ...")
+
+    # create dictionary of colors
+    colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
+
+    ## assign colors for all charge states below FLYonPICInitialChargeState
+    colorDict = {}
+    for z in range(FLYonPICInitialChargeState):
+        try:
+            colorDict[z] = next(colors)
+        except StopIteration:
+            colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
+            colorDict[z] = next(colors)
+    ## assign colors to FLYonPICInitialChargeState atomic states
+    for i in range(firstIndexInitialChargeState, lastIndexInitialChargeState+1):
+        try:
+            colorDict[i+FLYonPICInitialChargeState] = next(colors)
+        except StopIteration:
+            colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
+            colorDict[i+FLYonPICInitialChargeState] = next(colors)
+    ## assign color to other
+    try:
+        colorDict[-1] = next(colors)
+    except StopIteration:
+        colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
+        colorDict[-1] = next(colors)
+
+    # plot initial FLYonPIC charge state atomic states
+    for i in range(firstIndexInitialChargeState, lastIndexInitialChargeState + 1):
+        atomicConfigNumber = atomicConfigNumbersSorted[i]
+        axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i], linewidth=1, alpha=0.5, linestyle="--",
+                    color=colorDict[i+FLYonPICInitialChargeState], label="[SCFLY] " + str(
+                        conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)))
+    # plot below charge states
+    for z in range(FLYonPICInitialChargeState):
+        axes.plot(timeSteps_SCFLY, belowFLYonPICInitial[:, z], linewidth=1, alpha=0.5, linestyle="--",
+                    color=colorDict[z], label="[SCFLY] chargeState" + str(z))
+    # plot other
+    axes.plot(timeSteps_SCFLY, aboveFLYonPICInitial, linewidth=1, alpha=0.5, linestyle="--",
+                color=colorDict[-1], label="[SCFLY] other")
+
+    axes.set_xlim((0,maxTime))
+    handles, labels = axes.get_legend_handles_labels()
+    uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
+    lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
+
+    print("saving...")
+    plt.savefig("RecombinationImportance_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(figure)
+    print()
+
+@typeguard.typechecked
+def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : list[cfg.AtomicPopulationPlotConfig], tasks_recombination : list[cfg.AtomicPopulationPlotConfig], FLYonPICInitialChargeState : int = 0):
     # plot additive and absolute states
     for config in tasks_general:
         print(config.dataName)
@@ -537,7 +635,6 @@ def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : 
 
     # plot diff plots between FLYonPIC and SCFLY
     for config in tasks_diff:
-        print(config.dataName)
         if(config.loadRaw):
             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
                 atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
@@ -552,6 +649,18 @@ def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : 
         plot_StepDiff(plotStepList, config,
             mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC,
             atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY)
+
+    # plot recombination importance from SCFLY scan
+    for config in tasks_recombination:
+        if(config.loadRaw):
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = preProcess(config)
+        else:
+            mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
+                atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadProcessed(config)
+
+        plotRecombinationImportance(config, FLYonPICInitialChargeState, atomicPopulationData,
+                                    axisDict, atomicConfigNumbers, timeSteps_SCFLY)
 
 if __name__ == "__main__":
     # base paths to FLYonPIC simulation openPMD output

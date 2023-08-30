@@ -160,6 +160,7 @@ if __name__ == "__main__":
     SCFLY_stateNames = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/atomicStateNaming.input"
 
     # load in state names
-    SCFLY_to_FLYonPIC, = readSCFLYNames(SCFLY_stateNames, Z, numLevels)
+    SCFLY_to_FLYonPIC, temp= readSCFLYNames(SCFLY_stateNames, Z, numLevels)
+    del temp
     # get all unique BlockSizes
     atomicPopulationData, atomicConfigNumbers, timeData = getSCFLY_Data(SCFLY_output, SCFLY_to_FLYonPIC)

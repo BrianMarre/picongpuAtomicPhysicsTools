@@ -2,10 +2,12 @@ import typing
 import pydantic
 
 import numpy as np
-import ConfigNumberConversion as conv
 import os
 import shutil
 import subprocess
+
+import ConfigNumberConversion as conv
+import SCFLY_Reader as reader
 
 """ @file generates and runs SCFLY simulations
 
@@ -18,24 +20,9 @@ import subprocess
     see `if __name__=="__main__":` for example
 """
 
-class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
-    """BaseConfig for creating optical thin, no radiation temperature, time dependent SCFLY simulations"""
+class BaseConfig_SCFLY(pydantic.BaseModel):
     # Z of element
     atomicNumber : int
-    # time points for input and output for/from SCFLY
-    timePoints : list[float]
-    # number density of ions over time, 1/cm^3
-    ionDensity : list[float]
-    # electron temperature over time, eV
-    electronTemperature : list[float]
-    # list of atomicStates, by SCFLY Name, and starting fraction for each state
-    initialCondition : list[tuple[str, float]]
-    # minimum charge state to include in calculation
-    minChargeState : int
-    # maximum charge state to include in calculation
-    maxChargeState : int
-    # number of atomic shells to include in calculation, <=10
-    numLevels : int
     # path to SCFLY atomicData input file, will be copied to SCFLY setup directory
     atomicDataInputFile : str
     # output file name, written by SCFLY, @attention will overwrite existing files
@@ -50,6 +37,37 @@ class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
     def get(self):
         """convert Config to BaseConfig"""
         return self
+
+    def generateSCFLYSetup():
+        raise RuntimeError("not implemented!")
+
+    def execute(self, SCFLYBinaryPath: str):
+        """run scfly"""
+        # check setup previously generated
+        assert(self._generated), "setup must be generated before executing"
+
+        # print location to console
+        print(["cd "+ self.basePath + self.folderName, "&&", SCFLYBinaryPath, "runfile.txt",
+                        "&&", "cd /home/marre55/scflyTools"])
+
+        subprocess.run([SCFLYBinaryPath, "runfile.txt"], cwd=(self.basePath+self.folderName))
+
+class BaseConfig_SCFLY_TimeDependent(BaseConfig_SCFLY):
+    """BaseConfig for creating optical thin, no radiation temperature, time dependent SCFLY simulations"""
+    # time points for input and output for/from SCFLY
+    timePoints : list[float]
+    # number density of ions over time, 1/cm^3
+    ionDensity : list[float]
+    # electron temperature over time, eV
+    electronTemperature : list[float]
+    # list of atomicStates, by SCFLY Name, and starting fraction for each state
+    initialCondition : list[tuple[str, float]]
+    # minimum charge state to include in calculation
+    minChargeState : int
+    # maximum charge state to include in calculation
+    maxChargeState : int
+    # number of atomic shells to include in calculation, <=10
+    numLevels : int
 
     def generateSCFLYSetup(self):
         # create folder
@@ -86,17 +104,6 @@ class BaseConfig_SCFLY_TimeDependent(pydantic.BaseModel):
         self._generated = True
         return self
 
-    def execute(self, SCFLYBinaryPath: str):
-        """run scfly"""
-        # check setup previously generated
-        assert(self._generated), "setup must be generated before executing"
-
-        # print location to console
-        print(["cd "+ self.basePath + self.folderName, "&&", SCFLYBinaryPath, "runfile.txt",
-                        "&&", "cd /home/marre55/scflyTools"])
-
-        subprocess.run([SCFLYBinaryPath, "runfile.txt"], cwd=(self.basePath+self.folderName))
-
 class Config_SCFLY_FLYonPICComparison(pydantic.BaseModel):
     """configuration for SCFLY simulations for comparison to FLYonPIC simulations"""
     # Z of element
@@ -126,7 +133,8 @@ class Config_SCFLY_FLYonPICComparison(pydantic.BaseModel):
         numLevels = len(self.initialStateLevelVector)
 
         # get translation from FLYonPIC to SCFLY
-        , atomicConfigNumber_to_StateName = readSCFLYNames(self.SCFLYatomicStateNamingFile, self.atomicNumber, numLevels)
+        temp, atomicConfigNumber_to_StateName = reader.readSCFLYNames(self.SCFLYatomicStateNamingFile, self.atomicNumber, numLevels)
+        del temp
 
         return BaseConfig_SCFLY_TimeDependent(
             atomicNumber = self.atomicNumber,
