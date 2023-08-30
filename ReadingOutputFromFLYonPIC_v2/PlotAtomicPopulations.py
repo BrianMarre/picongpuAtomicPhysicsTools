@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as color
 import matplotlib.scale as scale
 
+from labellines import labelLine, labelLines
+
 import typeguard
 from tqdm import tqdm
 import numpy as np
@@ -519,6 +521,7 @@ def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlotCo
 @typeguard.typechecked
 def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPICInitialChargeState : int, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
     """plot SCFLY charge state populations below FLYonPIC initial charge state over time"""
+    colorChargeStates = ChargeStateColors.getChargeStateColors(config, additionalIndices = [-1])
 
     # prepare plot
     figure = plt.figure(dpi=300)
@@ -565,49 +568,31 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPI
 
     print("plotting SCFLY recombination importance ...")
 
-    # create dictionary of colors
-    colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
-
-    ## assign colors for all charge states below FLYonPICInitialChargeState
-    colorDict = {}
-    for z in range(FLYonPICInitialChargeState):
-        try:
-            colorDict[z] = next(colors)
-        except StopIteration:
-            colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
-            colorDict[z] = next(colors)
-    ## assign colors to FLYonPICInitialChargeState atomic states
-    for i in range(firstIndexInitialChargeState, lastIndexInitialChargeState+1):
-        try:
-            colorDict[i+FLYonPICInitialChargeState] = next(colors)
-        except StopIteration:
-            colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
-            colorDict[i+FLYonPICInitialChargeState] = next(colors)
-    ## assign color to other
-    try:
-        colorDict[-1] = next(colors)
-    except StopIteration:
-        colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
-        colorDict[-1] = next(colors)
-
     # plot initial FLYonPIC charge state atomic states
+    atomicStateLines = []
     for i in range(firstIndexInitialChargeState, lastIndexInitialChargeState + 1):
         atomicConfigNumber = atomicConfigNumbersSorted[i]
-        axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i], linewidth=1, alpha=0.5, linestyle="--",
-                    color=colorDict[i+FLYonPICInitialChargeState], label="[SCFLY] " + str(
+        z = chargeStates[i]
+        line = axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i], linewidth=1, alpha=0.5, linestyle="--",
+                    color=colorChargeStates[z], label=str(
                         conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)))
+        atomicStateLines.append(line[0])
     # plot below charge states
     for z in range(FLYonPICInitialChargeState):
         axes.plot(timeSteps_SCFLY, belowFLYonPICInitial[:, z], linewidth=1, alpha=0.5, linestyle="--",
-                    color=colorDict[z], label="[SCFLY] chargeState" + str(z))
+                    color=colorChargeStates[z], label="[SCFLY] chargeState" + str(z))
     # plot other
     axes.plot(timeSteps_SCFLY, aboveFLYonPICInitial, linewidth=1, alpha=0.5, linestyle="--",
-                color=colorDict[-1], label="[SCFLY] other")
+                color=colorChargeStates[-1], label="[SCFLY] other")
 
     axes.set_xlim((0,maxTime))
+    # legend entries for each charge state
     handles, labels = axes.get_legend_handles_labels()
-    uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
+    uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]][-3:]
     lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
+
+    # line annotation with level vectors
+    labelLines(atomicStateLines, zorder=2.5, fontsize=5)
 
     print("saving...")
     plt.savefig("RecombinationImportance_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')

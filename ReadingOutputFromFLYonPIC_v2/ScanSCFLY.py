@@ -105,8 +105,8 @@ if __name__=="__main__":
     numberStatesToPlot = 470
 
     # colourmap
-    colorMap = plt.cm.tab20b
-    numColorsInColorMap = 20
+    colorMap = plt.cm.tab10
+    numColorsInColorMap = 10
 
     storagePath = "preProcessedData/"
 
