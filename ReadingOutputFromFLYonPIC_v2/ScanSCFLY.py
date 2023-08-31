@@ -32,7 +32,8 @@ class ScanConfig(pydantic.BaseModel):
     numberStatesToPlot : int
     colorMap : typing.Any
     numColorsInColorMap : int
-    storagePath : str
+    processedDataStoragePath : str
+    figureStoragePath : str
 
 @typeguard.typechecked
 def createSCFLYBaseConfigs(config : ScanConfig) -> list[generator.BaseConfig_SCFLY]:
@@ -89,7 +90,8 @@ def plotSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY_T
             speciesName =                       "",
             atomicNumber=                       setup.atomicNumber,
             numLevels =                         len(config.initialStateLevelVector),
-            processedDataStoragePath =          config.storagePath,
+            processedDataStoragePath =          config.processedDataStoragePath,
+            figureStoragePath =                 config.figureStoragePath,
             dataName =                          "SCFLY_" + setup.folderName,
             loadRaw =                           True)
 
@@ -108,7 +110,8 @@ if __name__=="__main__":
     colorMap = plt.cm.tab10
     numColorsInColorMap = 10
 
-    storagePath = "preProcessedData/"
+    processedDataStoragePath = "preProcessedData/"
+    figureStoragePath = "SCFLYArScanImages/"
 
     scanConfig = ScanConfig(
         atomicNumber = 18,
@@ -125,7 +128,8 @@ if __name__=="__main__":
         numberStatesToPlot = numberStatesToPlot,
         colorMap = colorMap,
         numColorsInColorMap = numColorsInColorMap,
-        storagePath = storagePath)
+        processedDataStoragePath = processedDataStoragePath,
+        figureStoragePath = figureStoragePath)
 
     runSCFLY = False
 
@@ -138,3 +142,6 @@ if __name__=="__main__":
         generateSCFLYSetups(tasks)
         runSCFLYScan(scanConfig, tasks)
     plotSCFLYScan(scanConfig, tasks, FLYonPICInitialChargeState)
+
+    np.savetxt(config.figureStoragePath + "electronTemperatures.txt", config.electronTemperatures)
+    np.savetxt(config.figureStoragePath + "ionDensities.txt", config.ionDensities)

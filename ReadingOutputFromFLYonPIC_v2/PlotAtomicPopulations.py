@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as color
 import matplotlib.scale as scale
 
-from labellines import labelLine, labelLines
+from labellines import labelLines
 
 import typeguard
 from tqdm import tqdm
@@ -349,7 +349,8 @@ def plot_additive(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collect
     lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
 
     print("saving...")
-    plt.savefig("AtomicPopulationData_additive_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.savefig(config.figureStoragePath + "AtomicPopulationData_additive_" + config.dataName,
+                bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(figure)
     print()
 
@@ -426,7 +427,8 @@ def plot_absolute(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collect
     lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
 
     print("saving...")
-    plt.savefig("AtomicPopulationData_absolute_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.savefig(config.figureStoragePath + "AtomicPopulationData_absolute_" + config.dataName,
+                bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(figure)
     print()
 
@@ -473,7 +475,7 @@ def plot_DiffByState(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, coll
     plt.pcolormesh(X, Y, diff, cmap=plt.cm.RdBu_r, norm=color.SymLogNorm(linthresh=1e-8),)
     plt.colorbar()
     figure.tight_layout()
-    plt.savefig("AtomicPopulation_diff_" + config.dataName)
+    plt.savefig(config.figureStoragePath + "AtomicPopulation_diff_" + config.dataName)
     plt.close(figure)
 
 @typeguard.typechecked
@@ -515,7 +517,7 @@ def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlotCo
 
     print("saving...")
     plt.tight_layout()
-    plt.savefig("AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
+    plt.savefig(config.figureStoragePath + "AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
     plt.close(figure)
 
 @typeguard.typechecked
@@ -588,14 +590,14 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPI
     axes.set_xlim((0,maxTime))
     # legend entries for each charge state
     handles, labels = axes.get_legend_handles_labels()
-    uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]][-3:]
+    uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]][-4:]
     lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
 
     # line annotation with level vectors
-    labelLines(atomicStateLines, zorder=2.5, fontsize=5)
+    labelLines(atomicStateLines, zorder=2.5, fontsize=4, backgroundcolor='none', alpha=0.5)
 
     print("saving...")
-    plt.savefig("RecombinationImportance_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.savefig(config.figureStoragePath + "RecombinationImportance_" + config.dataName, bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close(figure)
     print()
 
@@ -702,8 +704,9 @@ if __name__ == "__main__":
         atomicNumber=                       atomicNumber_Ar,
         numLevels =                         numLevels_Ar,
         processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
         dataName =                          "FLYonPIC_30ppc_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -718,8 +721,9 @@ if __name__ == "__main__":
         atomicNumber=                       atomicNumber_Ar,
         numLevels =                         numLevels_Ar,
         processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
         dataName =                          "FLYonPIC_60ppc_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -734,8 +738,9 @@ if __name__ == "__main__":
         atomicNumber=                       atomicNumber_Ar,
         numLevels =                         numLevels_Ar,
         processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
         dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
@@ -750,8 +755,9 @@ if __name__ == "__main__":
         atomicNumber=                       atomicNumber_Ar,
         numLevels =                         numLevels_Ar,
         processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
         dataName =                          "SCFLY_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
@@ -766,6 +772,7 @@ if __name__ == "__main__":
         atomicNumber=                       atomicNumber_Li,
         numLevels =                         numLevels_Li,
         processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
         dataName =                          "FLYonPIC_30ppc_SCFLY_Li",
         loadRaw =                           True)
 
@@ -782,10 +789,11 @@ if __name__ == "__main__":
         atomicNumber=                       atomicNumber_Li,
         numLevels =                         numLevels_Li,
         processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
         dataName =                          "SCFLY_Li",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
     tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
 
-    plot_all(tasks_general, tasks_diff)
+    plot_all(tasks_general, tasks_diff, [])

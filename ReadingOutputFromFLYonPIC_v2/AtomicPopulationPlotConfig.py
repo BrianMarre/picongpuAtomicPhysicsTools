@@ -33,6 +33,8 @@ class AtomicPopulationPlotConfig(pydantic.BaseModel):
 
     # path for storing processed input data
     processedDataStoragePath : str
+    # path for storing plots
+    figureStoragePath : str
     # descriptive name of data set, used for plot labeling and storage naming, must be unique
     dataName : str
     # True: read form raw simulation output, False: load previously processed data from processedDataStoragePath
