@@ -74,7 +74,7 @@ def runSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY]):
         setup.execute(config.SCFLYBinaryPath)
 
 @typeguard.typechecked
-def plotSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY_TimeDependent], FLYonPICInitialChargeState : int) -> list[cfg.AtomicPopulationPlotConfig]:
+def plotSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY_TimeDependent], FLYonPICInitialChargeState : int):
     plotConfigs = []
     for setup in tasks:
         # create plotting config

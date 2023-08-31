@@ -17,30 +17,18 @@ import math
 import json
 
 @typeguard.typechecked
-def sortSCFLYDataAccordingToFLYonPIC(config : cfg.AtomicPopulationPlotConfig, atomicConfigNumbers, atomicPopulationData):
-    """sort SCFLY states according to primary chargeState, secondary atomicConfigNumber"""
-    chargeStates = np.fromiter(map(
-        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
-        atomicConfigNumbers), dtype = 'u1')
-    sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
-    del chargeStates
-
-    atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
-    atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
-    return atomicConfigNumbersSorted, atomicPopulationDataSorted
-
-@typeguard.typechecked
 def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     if(config.FLYonPICAtomicStateInputDataFile == ""):
         print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
-        return None, None, None, None
+        return None, None, None, None, None
     if(len(config.FLYonPICOutputFileNames) == 0):
         print("SKIPPING FLYonPIC: missing FLYonPIC_fileNames")
-        return None, None, None, None
+        return None, None, None, None, None
 
     # load atomic input Data for common indexation of atomic states
     atomicStates = np.loadtxt(
-        config.FLYonPICAtomicStateInputDataFile, dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
+        config.FLYonPICAtomicStateInputDataFile,
+        dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
 
     state_to_collectionIndex = {}
     collectionIndex_to_atomicConfigNumber = {}
@@ -54,7 +42,8 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     sampleListAtomicPopulationData = []
     sampleListTimeSteps = []
     for fileName in config.FLYonPICOutputFileNames:
-        sampleAtomicPopulationData, sampleTimeSteps = readerOpenPMD.getAtomicPopulationData(config.FLYonPICBasePath + fileName, config.speciesName)
+        sampleAtomicPopulationData, sampleTimeSteps = readerOpenPMD.getAtomicPopulationData(
+            config.FLYonPICBasePath + fileName, config.speciesName)
         sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
         sampleListTimeSteps.append(sampleTimeSteps)
 
@@ -69,21 +58,26 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     timeSteps = np.array(sampleListTimeSteps[0])
     del sampleListTimeSteps
 
-    # convert to array
-    data = np.empty((numberSamples, numberAtomicStates, numberIterations), dtype='f8')
+    # get array with all atomicConfigNumbers
+    atomicConfigNumbers = np.fromiter(
+        map(lambda i : collectionIndex_to_atomicConfigNumber[i], np.arange(numberAtomicStates)), dtype = 'u8')
+    del collectionIndex_to_atomicConfigNumber
+
+    # convert popualtion data to array
+    data = np.empty((numberSamples, numberIterations, numberAtomicStates), dtype='f8')
     for i, sample in enumerate(sampleListAtomicPopulationData):
         for state, index in state_to_collectionIndex.items():
-            data[i, index] = np.fromiter(
+            data[i, :, index] = np.fromiter(
                 map(lambda iteration: 0 if (iteration.get(state) is None) else iteration[state], sample), dtype='f8')
 
     # calculate total density
     totalDensity = np.empty((numberSamples, numberIterations), dtype='f8')
     for i in range(numberSamples):
         for j in range(numberIterations):
-            totalDensity[i,j] = math.fsum(data[i, :, j])
+            totalDensity[i,j] = math.fsum(data[i, j])
 
     # convert to relative abundances
-    data = data / totalDensity[:, np.newaxis, :]
+    data = data / totalDensity[:, :, np.newaxis]
 
     # calculate mean abundance and standard deviation
     mean = np.mean(data, axis = 0)
@@ -91,9 +85,10 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     if (numberSamples > 1):
         stdDev = np.std(data, axis = 0, ddof = 1)
     else:
-        stdDev = np.zeros((numberAtomicStates, numberIterations))
+        stdDev = np.zeros((numberIterations, numberAtomicStates))
 
-    return mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps
+    axisDict = {'timeStep':0, 'atomicState':1}
+    return mean, stdDev, axisDict, atomicConfigNumbers, timeSteps
 
 @typeguard.typechecked
 def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
@@ -104,42 +99,53 @@ def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
         print("SKIPPING SCFLY: missing SCFLY_output file")
         return None, None, None, None
 
-    # load state names
-    SCFLY_to_FLYonPIC, temp = readerSCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)
-    del temp
-
     # load data
-    atomicPopulationData, axisDict, atomicConfigNumbers, timeData = readerSCFLY.getSCFLY_Data(
-        config.SCFLYOutputFileName, SCFLY_to_FLYonPIC)
+    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = readerSCFLY.getSCFLY_Data(
+        config.SCFLYOutputFileName,
+        readerSCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)[0])
 
     # calculate total densities
     assert((len(np.shape(atomicPopulationData)) == 2) and (axisDict['timeStep'] == 0))
     totalDensity = np.fromiter(map(lambda timeStep: math.fsum(timeStep) , atomicPopulationData), dtype='f8')
-
     # calculate relative abundances
     atomicPopulationData = atomicPopulationData / totalDensity[:, np.newaxis]
 
-    return atomicPopulationData, axisDict, atomicConfigNumbers, timeData
+    # sort data according to FLYonPIC sorting
+    chargeStates = np.fromiter(map(
+        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
+        atomicConfigNumbers), dtype = 'u1')
+    sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
+    del chargeStates
+
+    atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
+    atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
+    del atomicConfigNumbers
+    del atomicPopulationData
+
+    return atomicPopulationDataSorted, axisDict, atomicConfigNumbersSorted, timeSteps
 
 @typeguard.typechecked
 def preProcess(config : cfg.AtomicPopulationPlotConfig):
     """pre process raw data, store pre processed data at config specified path and return preprocessed data"""
-    mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC = loadFLYonPICData(config)
-    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY = loadSCFLYdata(config)
+    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = loadFLYonPICData(config)
+    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadSCFLYdata(config)
 
     # write pre-processed data to file
     ## FLYonPIC
     if((type(mean) == np.ndarray)
         and (type(stdDev) == np.ndarray)
         and (type(timeSteps_FLYonPIC) == np.ndarray)
-        and (collectionIndex_to_atomicConfigNumber != None)):
+        and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray)
+        and (axisDict_FLYonPIC != None)):
         np.savetxt(config.processedDataStoragePath + "mean_" + config.dataName + ".data", mean)
         np.savetxt(config.processedDataStoragePath + "stdDev_" + config.dataName + ".data", stdDev)
+        np.savetxt(config.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_" + config.dataName + ".data",
+                   atomicConfigNumbers_FLYonPIC)
         np.savetxt(config.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data",
-                    timeSteps_FLYonPIC)
-        with open(config.processedDataStoragePath + "collectionIndex_to_ConfigNumber_" + config.dataName
+                   timeSteps_FLYonPIC)
+        with open(config.processedDataStoragePath + "axisDict_FLYonPIC_" + config.dataName
                 + ".dict", 'w') as File:
-            json.dump(collectionIndex_to_atomicConfigNumber, File)
+            json.dump(axisDict_FLYonPIC, File)
     ## SCFLY
     if((type(atomicPopulationData) == np.ndarray)
         and (type(atomicConfigNumbers) == np.ndarray)
@@ -151,12 +157,12 @@ def preProcess(config : cfg.AtomicPopulationPlotConfig):
                 atomicConfigNumbers)
         np.savetxt(config.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data",
                 timeSteps_SCFLY)
-        with open(config.processedDataStoragePath + "axis_" + config.dataName
+        with open(config.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName
                 + ".dict", 'w') as File:
             json.dump(axisDict, File)
 
-    return mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
-        atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY
+    return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC\
+        atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY
 
 @typeguard.typechecked
 def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
@@ -167,20 +173,25 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
         print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
         mean = None
         stdDev = None
+        axisDict_FLYonPIC = None
+        atomicConfigNumbers_FLYonPIC = None
         timeSteps_FLYonPIC = None
-        collectionIndex_to_atomicConfigNumber = None
     elif(len(config.FLYonPICOutputFileNames) == 0):
         print("SKIPPING FLYonPIC: missing FLYonPIC_fileNames")
         mean = None
         stdDev = None
+        axisDict_FLYonPIC = None
+        atomicConfigNumbers_FLYonPIC = None
         timeSteps_FLYonPIC = None
-        collectionIndex_to_atomicConfigNumber = None
     else:
         mean = np.loadtxt(config.processedDataStoragePath + "mean_" + config.dataName + ".data")
         stdDev = np.loadtxt(config.processedDataStoragePath + "stdDev_" + config.dataName + ".data")
-        timeSteps_FLYonPIC = np.loadtxt(config.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data")
+        atomicConfigNumbers_FLYonPIC = np.loadtxt(
+            config.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_" + config.dataName + ".data",)
+        timeSteps_FLYonPIC = np.loadtxt(
+            config.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data")
         with open(config.processedDataStoragePath + "collectionIndex_to_ConfigNumber_" + config.dataName + ".dict", 'r') as File:
-            conversionDictionary = json.load(File)
+            axisDict_FLYonPIC = json.load(File)
 
         # convert string keys back to int
         collectionIndex_to_atomicConfigNumber = {}
@@ -209,6 +220,19 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
 
     return mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, \
         atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY
+
+@typeguard.typechecked
+def reducePerChargeState(config : cfg.AtomicPopulationPlotConfig, arrays, axisDicts, collectionIndex_to_atomicConfigNumber):
+    numberTimeSteps = arrays[0][1]
+    numberAtomicStates = arrays[0][0]
+
+    # reduce
+    mean_ChargeState = np.zeros((numberTimeSteps, config.atomicNumber + 1))
+    for i in range(numberAtomicStates):
+        atomicConfigNumber = collectionIndex_to_atomicConfigNumber[i]
+        chargeState = conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels)
+        mean_ChargeState[int(chargeState)] += mean[i]
+
 
 @typeguard.typechecked
 def plot_additive(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
@@ -602,6 +626,88 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPI
     print()
 
 @typeguard.typechecked
+def plotChargeStates(config : cfg.AtomicPopulationPlotConfig, mean, stdDev, collectionIndex_to_atomicConfigNumber, timeSteps_FLYonPIC, atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps_SCFLY):
+    """plot charge states on logarithmic scale"""
+    colorChargeStates = ChargeStateColors.getChargeStateColors(config)
+
+    # prepare plot
+    figure = plt.figure(dpi=300)
+    axes = figure.add_subplot(111)
+    axes.set_title("ChargeState population Data: " + config.dataName)
+    axes.set_xlabel("time[s]")
+    axes.set_ylabel("relative abundance")
+    axes.set_yscale('log')
+    axes.set_ylim((1e-7,1))
+
+    maxTime = 0
+
+ # if have FLYonPIC data, plot it
+    if((type(mean) == np.ndarray)
+       and (type(stdDev) == np.ndarray)
+       and (type(timeSteps_FLYonPIC) == np.ndarray)
+       and (collectionIndex_to_atomicConfigNumber != None)):
+
+        numberAtomicStates = np.shape(mean)[0]
+        maxTime = max(maxTime, np.max(timeSteps_FLYonPIC))
+
+        print("plotting FLYonPIC absolute ...")
+        widthBars = np.empty_like(timeSteps_FLYonPIC)
+        widthBars[:-1] = timeSteps_FLYonPIC[1:] - timeSteps_FLYonPIC[:-1]
+        widthBars[-1] = widthBars[-2]
+
+        for collectionIndex in tqdm(range(numberAtomicStates)):
+            chargeState = conv.getChargeState(collectionIndex_to_atomicConfigNumber[collectionIndex], config.atomicNumber, config.numLevels)
+
+            ### plot mean value
+            axes.plot(timeSteps_FLYonPIC, mean[collectionIndex, :], linewidth=1, alpha=0.5,
+                      color=colorChargeStates[chargeState], label="[FLYonPIC] chargeState " + str(chargeState))
+
+            ### plot standard deviation
+            axes.bar(timeSteps_FLYonPIC, 2 * stdDev[collectionIndex, :], width=widthBars,
+                bottom = mean[collectionIndex, :] - stdDev[collectionIndex, :],
+                align='center', color=colorChargeStates[chargeState], alpha=0.2)
+
+    # if have SCFLY data, plot
+    if((type(atomicPopulationData) == np.ndarray)
+       and (type(atomicConfigNumbers) == np.ndarray)
+       and (type(timeSteps_SCFLY) == np.ndarray)
+       and (axisDict != None)):
+
+        maxTime = max(maxTime, np.max(timeSteps_SCFLY))
+
+        # number Iterations
+        numberIterations_SCFLY = np.shape(timeSteps_SCFLY)[0]
+
+        # sort states according to primary chargeState, secondary atomicConfigNumber
+        atomicConfigNumbersSorted, atomicPopulationDataSorted = sortSCFLYDataAccordingToFLYonPIC(config, atomicConfigNumbers, atomicPopulationData)
+        del atomicConfigNumbers
+        del atomicPopulationData
+
+        print("plotting SCFLY absolute ...")
+
+        # for each atomic state
+        for i, configNumber in enumerate(atomicConfigNumbersSorted):
+            chargeState = conv.getChargeState(configNumber, config.atomicNumber, config.numLevels)
+
+            axes.plot(timeSteps_SCFLY, atomicPopulationDataSorted[:, i], linewidth=1, alpha=0.5, linestyle="--",
+                      color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(int(chargeState)))
+
+    axes.set_xlim((0,maxTime))
+    handles, labels = axes.get_legend_handles_labels()
+    uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
+    lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
+
+    print("saving...")
+    plt.savefig(config.figureStoragePath + "AtomicPopulationData_absolute_" + config.dataName,
+                bbox_extra_artists=(lgd,), bbox_inches='tight')
+    plt.close(figure)
+    print()
+
+
+
+
+
+@typeguard.typechecked
 def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : list[cfg.AtomicPopulationPlotConfig], tasks_recombination : list[cfg.AtomicPopulationPlotConfig], FLYonPICInitialChargeState : int = 0):
     # plot additive and absolute states
     for config in tasks_general:
@@ -706,7 +812,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_30ppc_Ar",
-        loadRaw =                           True)
+        loadRaw =                           False)
 
     config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -723,7 +829,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_60ppc_Ar",
-        loadRaw =                           True)
+        loadRaw =                           False)
 
     config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -740,7 +846,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
-        loadRaw =                           True)
+        loadRaw =                           False)
 
     config_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
@@ -757,7 +863,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "SCFLY_Ar",
-        loadRaw =                           True)
+        loadRaw =                           False)
 
     config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
@@ -791,7 +897,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "SCFLY_Li",
-        loadRaw =                           True)
+        loadRaw =                           False)
 
     tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
     tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
