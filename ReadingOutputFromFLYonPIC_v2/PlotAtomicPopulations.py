@@ -483,7 +483,7 @@ def plot_DiffByState(config : cfg.AtomicPopulationPlotConfig,
     # check number atomic states is equal
     assert(np.shape(mean)[axisDict_FLYonPIC['atomicState']] == np.shape(atomicPopulationData)[axisDict_SCFLY['atomicState']])
     # check number time steps is equal
-    assert(np.shape(mean)[axisDict_FLYonPIC['atomicState']] == np.shape(atomicPopulationData)[axisDict_SCFLY['timeStep']])
+    assert(np.shape(mean)[axisDict_FLYonPIC['timeStep']] == np.shape(atomicPopulationData)[axisDict_SCFLY['timeStep']])
 
     # check that timeSteps ~equal
     assert(np.all(np.fromiter(map(
@@ -721,7 +721,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlotConfig,
         assert(axisDict_ChargeState['chargeState'] == 1)
 
         for chargeState in tqdm(range(config.atomicNumber + 1)):
-            axes.plot(timeSteps_SCFLY, chargeStateData[:, chargeState], linewidth=1, alpha=0.5,
+            axes.plot(timeSteps_SCFLY, chargeStateData[:, chargeState], linewidth=1, alpha=0.5, linestyle="--",
                       color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(chargeState))
 
     axes.set_xlim((0,maxTime))
