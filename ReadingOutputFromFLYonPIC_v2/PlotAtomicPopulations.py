@@ -141,9 +141,9 @@ def reduceToPerChargeState(config : cfg.AtomicPopulationPlotConfig, populationDa
     for i in range(numberAtomicStates):
         atomicConfigNumber = atomicConfigNumbers[i]
         chargeState = conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels)
-        reducedPerChargeState[:, int(chargeState)] += populationData[:, i]
+        chargeStateData[:, int(chargeState)] += populationData[:, i]
 
-    axisDict= {'timeStep' : 0, 'chargeState' : 1}
+    axisDict = {'timeStep' : 0, 'chargeState' : 1}
     return chargeStateData, axisDict
 
 @typeguard.typechecked
@@ -170,20 +170,20 @@ def preProcess(config : cfg.AtomicPopulationPlotConfig):
             json.dump(axisDict_FLYonPIC, File)
     ## SCFLY
     if((type(atomicPopulationData) == np.ndarray)
-        and (type(atomicConfigNumbers) == np.ndarray)
+        and (type(atomicConfigNumbers_SCFLY) == np.ndarray)
         and (type(timeSteps_SCFLY) == np.ndarray)
-        and (axisDict != None)):
+        and (axisDict_SCFLY != None)):
         np.savetxt(config.processedDataStoragePath + "atomicPopulationData_" + config.dataName + ".data",
                 atomicPopulationData)
         np.savetxt(config.processedDataStoragePath + "atomicConfigNumbers_" + config.dataName + ".data",
-                atomicConfigNumbers)
+                atomicConfigNumbers_SCFLY)
         np.savetxt(config.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data",
                 timeSteps_SCFLY)
         with open(config.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName
                 + ".dict", 'w') as File:
-            json.dump(axisDict, File)
+            json.dump(axisDict_SCFLY, File)
 
-    return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC\
+    return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
         atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY
 
 @typeguard.typechecked
@@ -212,7 +212,7 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
             config.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_" + config.dataName + ".data",)
         timeSteps_FLYonPIC = np.loadtxt(
             config.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data")
-        with open(config.processedDataStoragePath + "collectionIndex_to_ConfigNumber_" + config.dataName + ".dict", 'r') as File:
+        with open(config.processedDataStoragePath + "axisDict_FLYonPIC_" + config.dataName + ".dict", 'r') as File:
             axisDict_FLYonPIC = json.load(File)
 
     ## SCFLY
@@ -232,10 +232,10 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
         atomicPopulationData = np.loadtxt(config.processedDataStoragePath + "atomicPopulationData_" + config.dataName + ".data")
         atomicConfigNumbers_SCFLY = np.loadtxt(config.processedDataStoragePath + "atomicConfigNumbers_" + config.dataName + ".data")
         timeSteps_SCFLY = np.loadtxt(config.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data")
-        with open(config.processedDataStoragePath + "axis_" + config.dataName + ".dict", 'r') as File:
+        with open(config.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName + ".dict", 'r') as File:
             axisDict_SCFLY = json.load(File)
 
-    return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC\
+    return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
         atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY
 
 @typeguard.typechecked
@@ -258,8 +258,9 @@ def plot_additive(config : cfg.AtomicPopulationPlotConfig,
     # if have FLYonPIC data, plot it
     if((type(mean) == np.ndarray)
        and (type(stdDev) == np.ndarray)
+       and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray)
        and (type(timeSteps_FLYonPIC) == np.ndarray)
-       and (axisDict != None)):
+       and (axisDict_FLYonPIC != None)):
         numberAtomicStates = np.shape(mean)[axisDict_FLYonPIC['atomicState']]
 
         maxTime = max(maxTime, np.max(timeSteps_FLYonPIC))
@@ -278,7 +279,7 @@ def plot_additive(config : cfg.AtomicPopulationPlotConfig,
                 collectionIndexInitialMaxAbundanceState = np.argmax(mean[0, :])
             elif axisDict_FLYonPIC['timeStep'] == 1:
                 collectionIndexInitialMaxAbundanceState = np.argmax(mean[:, 0])
-            else
+            else:
                 raise RuntimeError("invalid mean shape / axisDict_FLYonPIC")
 
             # remove initial state from list of standard plot states
@@ -420,7 +421,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlotConfig,
         numberAtomicStates = np.shape(mean)[axisDict_FLYonPIC['atomicState']]
         maxTime = max(maxTime, np.max(timeSteps_FLYonPIC))
 
-        assert(axisDict_FLYonPIC['atomciState'] == 1), "wrong axis ordering in FLYonPIC data"
+        assert(axisDict_FLYonPIC['atomicState'] == 1), "wrong axis ordering in FLYonPIC data"
 
         print("plotting FLYonPIC absolute ...")
         widthBars = np.empty_like(timeSteps_FLYonPIC)
@@ -428,7 +429,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlotConfig,
         widthBars[-1] = widthBars[-2]
 
         for collectionIndex in tqdm(range(numberAtomicStates)):
-            chargeState = conv.getChargeState(a tomicConfigNumbers_FLYonPIC[collectionIndex],
+            chargeState = conv.getChargeState(atomicConfigNumbers_FLYonPIC[collectionIndex],
                                               config.atomicNumber, config.numLevels)
 
             ### plot mean value
@@ -448,7 +449,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlotConfig,
 
         maxTime = max(maxTime, np.max(timeSteps_SCFLY))
 
-        assert(axisDict_SCFLY['atomciState'] == 1), "wrong axis ordering in SCFLY data"
+        assert(axisDict_SCFLY['atomicState'] == 1), "wrong axis ordering in SCFLY data"
 
         # number Iterations
         numberIterations_SCFLY = np.shape(timeSteps_SCFLY)[0]
@@ -687,7 +688,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlotConfig,
 
         assert(axisDict_FLYonPIC['atomicState'] == 1), "wrong axis ordering in FLYonPIC data"
 
-        chargeStateData, axisDict_ChargeState = reducedPerChargeState(
+        chargeStateData, axisDict_ChargeState = reduceToPerChargeState(
             config, mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC)
 
         assert(axisDict_ChargeState['timeStep'] == 0)
@@ -713,7 +714,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlotConfig,
 
         assert(axisDict_SCFLY['atomicState'] == 1), "wrong axis ordering in SCFLY data"
 
-        chargeStateData, axisDict_ChargeState = reducedPerChargeState(
+        chargeStateData, axisDict_ChargeState = reduceToPerChargeState(
             config, atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY)
 
         assert(axisDict_ChargeState['timeStep'] == 0)
@@ -843,7 +844,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_30ppc_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -860,7 +861,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_60ppc_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -877,7 +878,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
@@ -894,7 +895,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "SCFLY_Ar",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
@@ -928,7 +929,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "SCFLY_Li",
-        loadRaw =                           False)
+        loadRaw =                           True)
 
     tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
     tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
