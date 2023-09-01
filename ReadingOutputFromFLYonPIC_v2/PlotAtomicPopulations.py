@@ -588,10 +588,10 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPI
     axes.set_yscale('log')
     axes.set_ylim((1e-7,1))
 
-    maxTime = np.max(timeSteps_SCFLY)
+    maxTime = np.max(timeSteps)
 
     # number Iterations
-    numberIterations_SCFLY = np.shape(timeSteps_SCFLY)[0]
+    numberIterations_SCFLY = np.shape(timeSteps)[0]
     numberAtomicStates = np.shape(atomicPopulationData)[axisDict['atomicState']]
 
     chargeStates = np.fromiter(
@@ -627,16 +627,16 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPI
     for i in range(firstIndexInitialChargeState, lastIndexInitialChargeState + 1):
         atomicConfigNumber = atomicConfigNumbers[i]
         z = chargeStates[i]
-        line = axes.plot(timeSteps_SCFLY, atomicPopulationData[:, i], linewidth=1, alpha=0.5, linestyle="--",
+        line = axes.plot(timeSteps, atomicPopulationData[:, i], linewidth=1, alpha=0.5, linestyle="--",
                     color=colorChargeStates[z], label=str(
                         conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)))
         atomicStateLines.append(line[0])
     # plot below charge states
     for z in range(FLYonPICInitialChargeState):
-        axes.plot(timeSteps_SCFLY, belowFLYonPICInitial[:, z], linewidth=1, alpha=0.5, linestyle="--",
+        axes.plot(timeSteps, belowFLYonPICInitial[:, z], linewidth=1, alpha=0.5, linestyle="--",
                     color=colorChargeStates[z], label="[SCFLY] chargeState" + str(z))
     # plot other
-    axes.plot(timeSteps_SCFLY, aboveFLYonPICInitial, linewidth=1, alpha=0.5, linestyle="--",
+    axes.plot(timeSteps, aboveFLYonPICInitial, linewidth=1, alpha=0.5, linestyle="--",
                 color=colorChargeStates[-1], label="[SCFLY] other")
 
     axes.set_xlim((0,maxTime))

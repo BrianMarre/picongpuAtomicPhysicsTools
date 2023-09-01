@@ -68,7 +68,7 @@ def createSCFLYBaseConfigs(config : ScanConfig) -> list[generator.BaseConfig_SCF
 def generateSCFLYSetups(tasks : list[generator.BaseConfig_SCFLY]):
     for setup in tqdm(tasks):
         # generate setup and execute SCFLY
-        setup.generateSCFLYSetup(config.SCFLYBinaryPath)
+        setup.generateSCFLYSetup()
 
 @typeguard.typechecked
 def runSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY]):
@@ -144,7 +144,7 @@ if __name__=="__main__":
         numColorsInColorMap = 20,
         processedDataStoragePath = processedDataStoragePath,
         figureStoragePath = "SCFLY_Cu_Recombination_IPD_ScanImages/",
-        runSCFLY = True,
+        runSCFLY = False,
         FLYonPICInitialChargeState = 2)
 
     scans = [scanConfig_Cu]#, scanConfig_Ar]
@@ -153,12 +153,12 @@ if __name__=="__main__":
         # create scan
         tasks = createSCFLYBaseConfigs(scanConfig)
         # run scfly
-        if runSCFLY:
+        if scanConfig.runSCFLY:
             generateSCFLYSetups(tasks)
             runSCFLYScan(scanConfig, tasks)
         # plot results
-        plotSCFLYScan(scanConfig, tasks, FLYonPICInitialChargeState_Ar)
+        plotSCFLYScan(scanConfig, tasks, scanConfig.FLYonPICInitialChargeState)
 
         # save temperatures and ionDensities for reference
-        np.savetxt(config.figureStoragePath + "electronTemperatures.txt", config.electronTemperatures)
-        np.savetxt(config.figureStoragePath + "ionDensities.txt", config.ionDensities)
+        np.savetxt(scanConfig.figureStoragePath + "electronTemperatures.txt", scanConfig.electronTemperatures)
+        np.savetxt(scanConfig.figureStoragePath + "ionDensities.txt", scanConfig.ionDensities)
