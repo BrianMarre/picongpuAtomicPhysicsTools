@@ -8,7 +8,7 @@ from . import Reader
 from . import SCFlyTools
 
 # configs for plotting
-from . import PlottingConfig
+from . import Config
 
 #plotting libraries
 from . import PlotAtomicPopulationData
@@ -21,7 +21,7 @@ __all__ = [
     "ChargeStateColors",
     "Reader",
     "SCFlyTools",
-    "PlottingConfig",
+    "Config",
     "PlotAtomicPopulationData",
     "PlotTimingData",
     "ScanSCFLY"]

@@ -2,44 +2,16 @@ import pydantic
 import typeguard
 import typing
 
-import SCFlyTools
-import PlotAtomicPopulations as plotter
-import PlottingConfig.AtomicPopulationPlot as cfg
-
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-class ScanConfig(pydantic.BaseModel):
-    atomicNumber : int
-    SCFLYatomicStateNamingFile : str
-    atomicDataInputFile : str
-
-    # eV
-    electronTemperatures : list[float]
-    # 1/cm^3
-    ionDensities : list[float]
-    # s
-    timePoints : list[float]
-    # initial state occupation number vector
-    initialStateLevelVector : tuple[int, ...]
-
-    outputBasePath : str
-    outputFileName : str
-    SCFLYBinaryPath : str
-    dataSeriesName : str
-
-    numberStatesToPlot : int
-    colorMap : typing.Any
-    numColorsInColorMap : int
-    FLYonPICInitialChargeState : int
-
-    processedDataStoragePath : str
-    figureStoragePath : str
-    runSCFLY : bool
+import SCFlyTools
+import PlotAtomicPopulations as plotter
+import Config as cfg
 
 @typeguard.typechecked
-def createSCFLYBaseConfigs(config : ScanConfig) -> list[SCFlyTools.BaseConfig.BaseConfig]:
+def createSCFLYBaseConfigs(config : cfg.Scan.ScanConfig) -> list[SCFlyTools.BaseConfig.BaseConfig]:
     SCFLYconfigs = []
 
     for i, electronTemperature in enumerate(tqdm(config.electronTemperatures)):
@@ -71,17 +43,21 @@ def generateSCFLYSetups(tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
         setup.generateSCFLYSetup()
 
 @typeguard.typechecked
-def runSCFLYScan(config : ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
+def runSCFLYScan(config : cfg.Scan.ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
     for setup in tasks:
         # generate setup and execute SCFLY
         setup.execute(config.SCFLYBinaryPath)
 
 @typeguard.typechecked
-def plotSCFLYScan(config : ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig_TimeDependent], FLYonPICInitialChargeState : int):
+def generatePlottingConfigs(
+        config : cfg.Scan.ScanConfig,
+        tasks : list[SCFlyTools.BaseConfig.BaseConfig_TimeDependent]) -> list[cfg..AtomicPopulationPlot.AtomicPopulationPlotConfig]:
+    # list of PlottingConfig instances
     plotConfigs = []
+
     for setup in tasks:
         # create plotting config
-        plotConfig = cfg.AtomicPopulationPlotConfig(
+        plotConfig = cfg.AtomicPopulationPlot.AtomicPopulationPlotConfig(
             FLYonPICAtomicStateInputDataFile =  "",
             SCFLYatomicStateNamingFile =        config.SCFLYatomicStateNamingFile,
             FLYonPICOutputFileNames =           [],
@@ -101,13 +77,19 @@ def plotSCFLYScan(config : ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseCo
         # store plotting config
         plotConfigs.append(plotConfig)
 
+    return plotConfigs
+
+@typeguard.typechecked
+def plotEachSCFLYScan(tasks : list[cfg..AtomicPopulationPlot.AtomicPopulationPlotConfig], FLYonPICInitialChargeState : int):
+    for plotConfig in tasks:
         # plot SCFLY data
         plotter.plot_all([plotConfig], [], [plotConfig], FLYonPICInitialChargeState)
 
 if __name__=="__main__":
     processedDataStoragePath = "preProcessedData/"
 
-    scanConfig_Ar = ScanConfig(
+    FLYonPICInitialChargeState = 2
+    scanConfig_Ar = cfg.Scan.(
         atomicNumber = 18,
         SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/18_atomicStateNaming.input",
         atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.18",
@@ -124,10 +106,9 @@ if __name__=="__main__":
         numColorsInColorMap = 10,
         processedDataStoragePath = processedDataStoragePath,
         figureStoragePath = "SCFLYArScanImages/",
-        runSCFLY = False,
-        FLYonPICInitialChargeState = 2)
+        runSCFLY = False)
 
-    scanConfig_Cu = ScanConfig(
+    scanConfig_Cu = cfg.Scan.(
         atomicNumber = 29,
         SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/29_atomicStateNaming.input",
         atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.29",
@@ -144,8 +125,7 @@ if __name__=="__main__":
         numColorsInColorMap = 20,
         processedDataStoragePath = processedDataStoragePath,
         figureStoragePath = "SCFLY_Cu_Recombination_IPD_ScanImages/",
-        runSCFLY = False,
-        FLYonPICInitialChargeState = 2)
+        runSCFLY = False)
 
     scans = [scanConfig_Cu]#, scanConfig_Ar]
 
@@ -157,7 +137,8 @@ if __name__=="__main__":
             generateSCFLYSetups(tasks)
             runSCFLYScan(scanConfig, tasks)
         # plot results
-        plotSCFLYScan(scanConfig, tasks, scanConfig.FLYonPICInitialChargeState)
+        plotConfigs = generatePlottingConfigs(scanConfig, tasks, FLYonPICInitialChargeState)
+        plotEachSCFLYScan(plotConfigs)
 
         # save temperatures and ionDensities for reference
         np.savetxt(scanConfig.figureStoragePath + "electronTemperatures.txt", scanConfig.electronTemperatures)

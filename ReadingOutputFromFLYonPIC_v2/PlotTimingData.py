@@ -3,7 +3,7 @@ import numpy as np
 import copy
 
 import Reader
-import PlottingConfig
+import Config
 
 def plot(config):
     casesStepTimes = []

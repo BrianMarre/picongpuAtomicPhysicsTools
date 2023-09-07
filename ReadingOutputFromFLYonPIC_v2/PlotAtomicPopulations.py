@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import Reader
 import SCFlyTools.AtomicConfigNumberConversion as conv
-import PlottingConfig.AtomicPopulationPlot as cfg
+import Config.AtomicPopulationPlot as cfg
 import ChargeStateColors
 
 import matplotlib.pyplot as plt
@@ -64,7 +64,7 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
         map(lambda i : collectionIndex_to_atomicConfigNumber[i], np.arange(numberAtomicStates)), dtype = 'u8')
     del collectionIndex_to_atomicConfigNumber
 
-    # convert popualtion data to array
+    # convert population data to array
     data = np.empty((numberSamples, numberIterations, numberAtomicStates), dtype='f8')
     for i, sample in enumerate(sampleListAtomicPopulationData):
         for state, index in state_to_collectionIndex.items():
