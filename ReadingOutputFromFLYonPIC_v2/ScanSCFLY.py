@@ -2,7 +2,7 @@ import pydantic
 import typeguard
 import typing
 
-import GenerateSCFLYSetups as generator
+import SCFlyTools
 import PlotAtomicPopulations as plotter
 import AtomicPopulationPlotConfig as cfg
 
@@ -39,13 +39,13 @@ class ScanConfig(pydantic.BaseModel):
     runSCFLY : bool
 
 @typeguard.typechecked
-def createSCFLYBaseConfigs(config : ScanConfig) -> list[generator.BaseConfig_SCFLY]:
+def createSCFLYBaseConfigs(config : ScanConfig) -> list[SCFlyTools.BaseConfig.BaseConfig]:
     SCFLYconfigs = []
 
     for i, electronTemperature in enumerate(tqdm(config.electronTemperatures)):
         for j, ionDensity in enumerate(config.ionDensities):
             # create config for case
-            comparisonFLYonPIC_Ar = generator.Config_SCFLY_FLYonPICComparison(
+            comparisonFLYonPIC_Ar = SCFlyTools.Config.FLYonPICComparison(
                 atomicNumber = config.atomicNumber,
                 electronTemperature = electronTemperature, # eV
                 ionDensity = ionDensity, # 1/cm^3
@@ -65,19 +65,19 @@ def createSCFLYBaseConfigs(config : ScanConfig) -> list[generator.BaseConfig_SCF
     return SCFLYconfigs
 
 @typeguard.typechecked
-def generateSCFLYSetups(tasks : list[generator.BaseConfig_SCFLY]):
+def generateSCFLYSetups(tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
     for setup in tqdm(tasks):
         # generate setup and execute SCFLY
         setup.generateSCFLYSetup()
 
 @typeguard.typechecked
-def runSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY]):
+def runSCFLYScan(config : ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
     for setup in tasks:
         # generate setup and execute SCFLY
         setup.execute(config.SCFLYBinaryPath)
 
 @typeguard.typechecked
-def plotSCFLYScan(config : ScanConfig, tasks : list[generator.BaseConfig_SCFLY_TimeDependent], FLYonPICInitialChargeState : int):
+def plotSCFLYScan(config : ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig_TimeDependent], FLYonPICInitialChargeState : int):
     plotConfigs = []
     for setup in tasks:
         # create plotting config
