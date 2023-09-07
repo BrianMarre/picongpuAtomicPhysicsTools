@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import Reader
 import SCFlyTools.AtomicConfigNumberConversion as conv
-import AtomicPopulationPlotConfig as cfg
+import PlottingConfig.AtomicPopulationPlot as cfg
 import ChargeStateColors
 
 import matplotlib.pyplot as plt

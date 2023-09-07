@@ -4,7 +4,7 @@ import typing
 
 import SCFlyTools
 import PlotAtomicPopulations as plotter
-import AtomicPopulationPlotConfig as cfg
+import PlottingConfig.AtomicPopulationPlot as cfg
 
 import matplotlib.pyplot as plt
 import numpy as np

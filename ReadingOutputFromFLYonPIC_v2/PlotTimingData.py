@@ -3,14 +3,7 @@ import numpy as np
 import copy
 
 import Reader
-
-
-class Config_TimingData:
-    def __init__(self, caseBasePaths, caseFileNames, caseDataNames, fileName):
-        self.caseBasePaths = caseBasePaths
-        self.caseFileNames = caseFileNames
-        self.caseDataNames = caseDataNames
-        self.fileName = fileName
+import PlottingConfig
 
 def plot(config):
     casesStepTimes = []
@@ -85,8 +78,8 @@ if __name__ == "__main__":
     basePath_Li = "/home/marre55/picInputs/testSCFlyComparison_Li/"
     files_Li = ["output_compare_30ppc_1.result"]
 
-    config_Argon = Config_TimingData([basePath, basePath], [files_30ppc, files_60ppc], ["30ppc", "60ppc"], "TimingData_Ar")
-    config_Lithium = Config_TimingData([basePath_Li], [files_Li], ["30ppc"], "TimingData_Li")
+    config_Argon = PlottingConfig.TimingDataPlot([basePath, basePath], [files_30ppc, files_60ppc], ["30ppc", "60ppc"], "TimingData_Ar")
+    config_Lithium = PlottingConfig.TimingDataPlot([basePath_Li], [files_Li], ["30ppc"], "TimingData_Li")
 
     plot(config_Argon)
     plot(config_Lithium)

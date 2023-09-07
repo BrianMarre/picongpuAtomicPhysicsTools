@@ -1,24 +1,28 @@
 # helpers
 from . import ChargeStateColors
 
-# configs
-from . import AtomicPopulationPlotConfig
-
-# file reader
+# file readers
 from . import Reader
-
-#plotting functions
-from . import PlotAtomicPopulationData
-from . import PlotTimingData
 
 # generating SCFLY setups
 from . import SCFlyTools
 
+# configs for plotting
+from . import PlottingConfig
+
+#plotting libraries
+from . import PlotAtomicPopulationData
+from . import PlotTimingData
+
+# scan with SCFLY
+from . import ScanSCFLY
+
 __all__ = [
     "ChargeStateColors",
-    "AtomicPopulationPlotConfig",
     "Reader",
+    "SCFlyTools",
+    "PlottingConfig",
     "PlotAtomicPopulationData",
     "PlotTimingData",
-    "SCFlyTools"]
+    "ScanSCFLY"]
 
