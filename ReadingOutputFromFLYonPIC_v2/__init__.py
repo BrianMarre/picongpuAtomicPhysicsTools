@@ -1,18 +1,24 @@
 # helpers
-import AtomicConfigNumberConversion
-import ChargeStateColors
+from . import ChargeStateColors
 
 # configs
-import AtomicPopulationPlotConfig
+from . import AtomicPopulationPlotConfig
 
-import Reader
+# file reader
+from . import Reader
 
 #plotting functions
-import PlotAtomicPopulationData
-import PlotTimingData
+from . import PlotAtomicPopulationData
+from . import PlotTimingData
 
 # generating SCFLY setups
-import GenerateSCFLY
+from . import SCFlyTools
 
-__all__ = ["AtomicConfigNumberConversion", "AtomicPopulationPlotConfig"]
+__all__ = [
+    "ChargeStateColors",
+    "AtomicPopulationPlotConfig",
+    "Reader",
+    "PlotAtomicPopulationData",
+    "PlotTimingData",
+    "SCFlyTools"]
 

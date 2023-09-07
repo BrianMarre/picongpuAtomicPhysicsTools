@@ -1,5 +1,5 @@
 import numpy as np
-import AtomicConfigNumberConversion as conv
+import SCFlyTools.AtomicConfigNumberConversion as conv
 
 def readSCFLYNames(fileName, Z, numLevels):
     """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers

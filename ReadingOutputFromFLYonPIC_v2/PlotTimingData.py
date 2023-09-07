@@ -1,7 +1,9 @@
-import TimingData_Reader as reader
 import matplotlib.pyplot as plt
 import numpy as np
 import copy
+
+import Reader
+
 
 class Config_TimingData:
     def __init__(self, caseBasePaths, caseFileNames, caseDataNames, fileName):
@@ -15,7 +17,7 @@ def plot(config):
     for i, basePath in enumerate(config.caseBasePaths):
         sampleStepTimes = []
         for fileName in config.caseFileNames[i]:
-            timingData = reader.readTimingData(basePath + fileName)
+            timingData = Reader.TimingData.readTimingData(basePath + fileName)
             sampleStepTimes.append(timingData)
         casesStepTimes.append(sampleStepTimes)
 

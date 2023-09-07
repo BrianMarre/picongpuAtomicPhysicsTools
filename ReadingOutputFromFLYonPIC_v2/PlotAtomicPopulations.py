@@ -1,6 +1,12 @@
-import openPMD_Reader as readerOpenPMD
-import SCFLY_Reader as readerSCFLY
-import ConfigNumberConversion as conv
+import typeguard
+
+import numpy as np
+import math
+import json
+from tqdm import tqdm
+
+import Reader
+import SCFlyTools.AtomicConfigNumberConversion as conv
 import AtomicPopulationPlotConfig as cfg
 import ChargeStateColors
 
@@ -10,11 +16,6 @@ import matplotlib.scale as scale
 
 from labellines import labelLines
 
-import typeguard
-from tqdm import tqdm
-import numpy as np
-import math
-import json
 
 @typeguard.typechecked
 def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
@@ -42,7 +43,7 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     sampleListAtomicPopulationData = []
     sampleListTimeSteps = []
     for fileName in config.FLYonPICOutputFileNames:
-        sampleAtomicPopulationData, sampleTimeSteps = readerOpenPMD.getAtomicPopulationData(
+        sampleAtomicPopulationData, sampleTimeSteps = Reader.openPMD.getAtomicPopulationData(
             config.FLYonPICBasePath + fileName, config.speciesName)
         sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
         sampleListTimeSteps.append(sampleTimeSteps)
@@ -100,9 +101,9 @@ def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
         return None, None, None, None
 
     # load data
-    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = readerSCFLY.getSCFLY_Data(
+    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = Reader.SCFLY.getSCFLY_Data(
         config.SCFLYOutputFileName,
-        readerSCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)[0])
+        Reader.SCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)[0])
 
     # calculate total densities
     assert((len(np.shape(atomicPopulationData)) == 2) and (axisDict['timeStep'] == 0))
