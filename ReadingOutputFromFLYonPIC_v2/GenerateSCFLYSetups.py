@@ -6,7 +6,7 @@ import os
 import shutil
 import subprocess
 
-import ConfigNumberConversion as conv
+import AtomicConfigNumberConversion as conv
 import SCFLY_Reader as reader
 
 """ @file generates and runs SCFLY simulations
