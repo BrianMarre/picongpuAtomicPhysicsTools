@@ -1,4 +1,5 @@
 import pydantic
+import typing
 
 class ScanConfig(pydantic.BaseModel):
     atomicNumber : int
@@ -25,4 +26,8 @@ class ScanConfig(pydantic.BaseModel):
 
     processedDataStoragePath : str
     figureStoragePath : str
+
     runSCFLY : bool
+    loadRaw : bool
+    plotEachSim : bool
+    plotSummary : bool

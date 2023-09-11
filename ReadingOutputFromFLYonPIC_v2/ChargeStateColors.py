@@ -1,5 +1,5 @@
 import typeguard
-import PlottingConfig.AtomicPopulationPlot as cfg
+import Config.AtomicPopulationPlot as cfg
 
 @typeguard.typechecked
 def getChargeStateColors(config : cfg.AtomicPopulationPlotConfig, additionalIndices : list[int] = []):

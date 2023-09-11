@@ -476,7 +476,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlotConfig,
     print()
 
 @typeguard.typechecked
-def plot_DiffByState(config : cfg.AtomicPopulationPlotConfig,
+def plotSurplusByState(config : cfg.AtomicPopulationPlotConfig,
                      mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                      atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
     """plot difference (FLYonPIC - SCFLY) for each atomic state and each step"""
@@ -768,7 +768,7 @@ def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : 
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
                 atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadProcessed(config)
 
-        plot_DiffByState(config,
+        plotSurplusByState(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
              atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
         plotStepList = [0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
