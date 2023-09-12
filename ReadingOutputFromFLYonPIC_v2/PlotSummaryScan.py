@@ -16,6 +16,7 @@ import matplotlib.scale as scale
 def processScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float):
     """extract summary from data of entire scan"""
 
+    print("generating scan setup...")
     baseConfigs, conditions, axisDictConditions = scan.generateBaseConfigs(scanConfig)
     plottingConfigs = scan.generatePlottingConfigs(scanConfig, baseConfigs)
 
@@ -33,7 +34,8 @@ def processScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float):
     assert (axisDictConditions['electronTemperature'] == 0)
     assert (axisDictConditions['ionDensity'] == 1)
 
-    for i, config in enumerate(plottingConfigs):
+    print("loading scan data for ")
+    for i, config in enumerate(tqdm(plottingConfigs)):
         if(config.loadRaw):
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
                 atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = PlotAtomicPopulations.preProcess(config)
@@ -193,6 +195,7 @@ def plotSummary(scanConfigs : list[cfg.Scan.ScanConfig],
 
 
     # plot data for each part
+    print("plotting summary of scan...")
     for scanConfig in tqdm(scanConfigs):
         # get data
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \

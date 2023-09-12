@@ -13,6 +13,7 @@ from . import Config
 #plotting libraries
 from . import PlotAtomicPopulationData
 from . import PlotTimingData
+from . import PlotSummaryScan
 
 # scan with SCFLY
 from . import ScanSCFLY
@@ -22,7 +23,8 @@ __all__ = [
     "Reader",
     "SCFlyTools",
     "Config",
+    "ScanSCFLY",
     "PlotAtomicPopulationData",
     "PlotTimingData",
-    "ScanSCFLY"]
+    "PlotSummaryScan"]
 

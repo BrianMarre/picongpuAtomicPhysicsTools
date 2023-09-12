@@ -16,8 +16,9 @@ def generateBaseConfigs(config : cfg.Scan.ScanConfig):
     baseConfigs = []
     conditions = []
 
+    print("generating BaseConfigs...")
     for i, electronTemperature in enumerate(tqdm(config.electronTemperatures)):
-        for j, ionDensity in enumerate(config.ionDensities):
+        for j, ionDensity in enumerate(tqdm(config.ionDensities)):
             # create config for case
             comparisonFLYonPIC_Ar = SCFlyTools.Config.FLYonPICComparison.FLYonPICComparison(
                 atomicNumber = config.atomicNumber,
@@ -43,6 +44,7 @@ def generateBaseConfigs(config : cfg.Scan.ScanConfig):
 
 @typeguard.typechecked
 def generateSetups(tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
+    print("generating setups...")
     for setup in tqdm(tasks):
         # generate setup and execute SCFLY
         setup.generateSCFLYSetup()
