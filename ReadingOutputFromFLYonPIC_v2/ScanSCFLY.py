@@ -11,33 +11,74 @@ import PlotAtomicPopulations as plotter
 import PlotSummaryScan as summary
 import Config as cfg
 
+import time
+import multiprocessing as parallel
+import functools
+
+def getBaseConfig(scanConfig, electronTemperature, ionDensity):
+    return SCFlyTools.Config.FLYonPICComparison.FLYonPICComparison(
+        atomicNumber = scanConfig.atomicNumber,
+        electronTemperature = electronTemperature, # eV
+        ionDensity = ionDensity, # 1/cm^3
+        timePoints = scanConfig.timePoints, # s
+        initialStateLevelVector = scanConfig.initialStateLevelVector,
+        SCFLYatomicStateNamingFile = scanConfig.SCFLYatomicStateNamingFile,
+        atomicDataInputFile = scanConfig.atomicDataInputFile,
+        outputFileName = scanConfig.outputFileName,
+        basePath = scanConfig.outputBasePath,
+        folderName = scanConfig.dataSeriesName + "_" + str(i) + "_Temp_" + str(j) + "_Density")
+
+
 @typeguard.typechecked
-def generateBaseConfigs(config : cfg.Scan.ScanConfig):
+def generateBaseConfigs(scanConfig : cfg.SCFLYScan.ScanConfig):
     baseConfigs = []
     conditions = []
 
     print("generating BaseConfigs...")
-    for i, electronTemperature in enumerate(tqdm(config.electronTemperatures)):
-        for j, ionDensity in enumerate(tqdm(config.ionDensities)):
+    t0 = time.time()
+
+    numTemps = np.shape(scanConfig.electronTemperatures)[0]
+    numDensities = np.shape(scanConfig.ionDensities)[0]
+
+    temps, densities = np.meshgrid(scanConfig.electronTemperatures,
+                                   scanConfig.ionDensities)
+    tasks = np.reshape(np.dstack((temps, densities)), (numTemps*numTemps, 2))
+
+    function = functools.partial(getBaseConfig, scanConfig)
+
+    with parallel.Pool(20) as p:
+        result = p.starmap_async(function, tasks)
+    t1 = time.time()
+    print(t1-t0)
+
+    for entry in result:
+        print(entry.electronTemperature)
+        print(entry.ionDensity)
+
+    for i, electronTemperature in enumerate(scanConfig.electronTemperatures):
+        for j, ionDensity in enumerate(scanConfig.ionDensities):
             # create config for case
             comparisonFLYonPIC_Ar = SCFlyTools.Config.FLYonPICComparison.FLYonPICComparison(
-                atomicNumber = config.atomicNumber,
+                atomicNumber = scanConfig.atomicNumber,
                 electronTemperature = electronTemperature, # eV
                 ionDensity = ionDensity, # 1/cm^3
-                timePoints = config.timePoints, # s
-                initialStateLevelVector = config.initialStateLevelVector,
-                SCFLYatomicStateNamingFile = config.SCFLYatomicStateNamingFile,
-                atomicDataInputFile = config.atomicDataInputFile,
-                outputFileName = config.outputFileName,
-                basePath = config.outputBasePath,
-                folderName = config.dataSeriesName + "_" + str(i) + "_Temp_" + str(j) + "_Density")
+                timePoints = scanConfig.timePoints, # s
+                initialStateLevelVector = scanConfig.initialStateLevelVector,
+                SCFLYatomicStateNamingFile = scanConfig.SCFLYatomicStateNamingFile,
+                atomicDataInputFile = scanConfig.atomicDataInputFile,
+                outputFileName = scanConfig.outputFileName,
+                basePath = scanConfig.outputBasePath,
+                folderName = scanConfig.dataSeriesName + "_" + str(i) + "_Temp_" + str(j) + "_Density")
 
-            # generate setup
-            generatedSetup = comparisonFLYonPIC_Ar.get()
+            # generate BaseConfig
+            baseConfig = comparisonFLYonPIC_Ar.get()
 
             # store SCFLY BaseConfig
-            baseConfigs.append(generatedSetup)
+            baseConfigs.append(baseConfig)
             conditions.append((i,j))
+
+    t1 = time.time()
+    print(t1-t0)
 
     axisDictConditions = {"electronTemperature":0, "ionDensity":1}
     return baseConfigs, conditions, axisDictConditions
@@ -50,21 +91,22 @@ def generateSetups(tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
         setup.generateSCFLYSetup()
 
 @typeguard.typechecked
-def runSCFLYScan(config : cfg.Scan.ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
+def runSCFLYScan(config : cfg.SCFLYScan.ScanConfig, tasks : list[SCFlyTools.BaseConfig.BaseConfig]):
     for setup in tasks:
         # generate setup and execute SCFLY
         setup.execute(config.SCFLYBinaryPath)
 
 @typeguard.typechecked
 def generatePlottingConfigs(
-        config : cfg.Scan.ScanConfig,
-        tasks : list[SCFlyTools.BaseConfig.BaseConfig_TimeDependent]) -> list[cfg.AtomicPopulationPlot.AtomicPopulationPlotConfig]:
+        config : cfg.SCFLYScan.ScanConfig,
+        tasks : list[SCFlyTools.BaseConfig.BaseConfig_TimeDependent],
+        loadRaw : bool = True) -> list[cfg.AtomicPopulationPlot.PlotConfig]:
     # list of PlottingConfig instances
     plotConfigs = []
 
     for setup in tasks:
         # create plotting config
-        plotConfig = cfg.AtomicPopulationPlot.AtomicPopulationPlotConfig(
+        plotConfig = cfg.AtomicPopulationPlot.PlotConfig(
             FLYonPICAtomicStateInputDataFile =  "",
             SCFLYatomicStateNamingFile =        config.SCFLYatomicStateNamingFile,
             FLYonPICOutputFileNames =           [],
@@ -79,7 +121,7 @@ def generatePlottingConfigs(
             processedDataStoragePath =          config.processedDataStoragePath,
             figureStoragePath =                 config.figureStoragePath,
             dataName =                          "SCFLY_" + setup.folderName,
-            loadRaw =                           True)
+            loadRaw =                           loadRaw)
 
         # store plotting config
         plotConfigs.append(plotConfig)
@@ -87,7 +129,7 @@ def generatePlottingConfigs(
     return plotConfigs
 
 @typeguard.typechecked
-def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.AtomicPopulationPlotConfig], FLYonPICInitialChargeState : int):
+def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPICInitialChargeState : int):
     for plotConfig in tasks:
         # plot SCFLY data
         plotter.plot_all([plotConfig], [], [plotConfig], FLYonPICInitialChargeState)
@@ -96,7 +138,7 @@ if __name__=="__main__":
     processedDataStoragePath = "preProcessedData/"
 
     FLYonPICInitialChargeState = 2
-    scanConfig_Ar = cfg.Scan.ScanConfig(
+    scanConfig_Ar = cfg.SCFLYScan.ScanConfig(
         atomicNumber = 18,
         SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/18_atomicStateNaming.input",
         atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.18",
@@ -115,10 +157,9 @@ if __name__=="__main__":
         figureStoragePath = "SCFLYArScanImages/",
         runSCFLY = False,
         plotEachSim = False,
-        plotSummary = True,
-        loadRaw = True)
+        plotSummary = True)
 
-    scanConfig_Cu = cfg.Scan.ScanConfig(
+    scanConfig_Cu = cfg.SCFLYScan.ScanConfig(
         atomicNumber = 29,
         SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/29_atomicStateNaming.input",
         atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.29",
@@ -137,8 +178,7 @@ if __name__=="__main__":
         figureStoragePath = "SCFLY_Cu_Recombination_IPD_ScanImages/",
         runSCFLY = False,
         plotEachSim = False,
-        plotSummary = True,
-        loadRaw = True)
+        plotSummary = True)
 
     scans = [scanConfig_Cu]#, scanConfig_Ar]
 

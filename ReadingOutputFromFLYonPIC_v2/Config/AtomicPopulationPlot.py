@@ -3,7 +3,7 @@ import typing
 import matplotlib.colors as color
 
 
-class AtomicPopulationPlotConfig(pydantic.BaseModel):
+class PlotConfig(pydantic.BaseModel):
     """Config object for plotting atomic populations"""
     # name of ion species in openPMD output
     speciesName : str

@@ -1,8 +1,8 @@
 import typeguard
-import Config.AtomicPopulationPlot as cfg
+import Config as cfg
 
 @typeguard.typechecked
-def getChargeStateColors(config : cfg.AtomicPopulationPlotConfig, additionalIndices : list[int] = []):
+def getChargeStateColors(config : cfg.AtomicPopulationPlot.PlotConfig, additionalIndices : list[int] = []):
     """@return dictionary assigning one color to each charge state"""
     colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
 

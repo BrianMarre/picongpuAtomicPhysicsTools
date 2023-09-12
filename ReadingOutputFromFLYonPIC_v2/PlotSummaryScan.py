@@ -13,34 +13,37 @@ import matplotlib.colors as color
 import matplotlib.scale as scale
 
 @typeguard.typechecked
-def processScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float):
+def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
+                    summaryConfig : cfg.SummaryScanPlot.PlotConfig):
     """extract summary from data of entire scan"""
 
-    print("generating scan setup...")
-    baseConfigs, conditions, axisDictConditions = scan.generateBaseConfigs(scanConfig)
-    plottingConfigs = scan.generatePlottingConfigs(scanConfig, baseConfigs)
+    baseConfigs, conditions, axisDictConditions \
+        = scan.generateBaseConfigs(scanConfig)
+    plottingConfigs = scan.generatePlottingConfigs(
+        scanConfig, baseConfigs, summaryConfig.loadRawEachSCLFYSim)
 
     initialChargeState = scanConfig.atomicNumber - np.sum(scanConfig.initialStateLevelVector)
 
     numberElectronTemperatures = len(scanConfig.electronTemperatures)
     numberIonDensities = len(scanConfig.ionDensities)
 
-    maxSurplusRecombination = np.empty((numberElectronTemperatures, numberIonDensities), dtype='f4')
-    maxSurplusIonization = np.empty((numberElectronTemperatures, numberIonDensities), dtype='f4')
-
-    maxPartition = np.empty((numberElectronTemperatures, numberIonDensities), dtype='f4')
-    maxSurplusIonizationToInitialState = np.empty((numberElectronTemperatures, numberIonDensities), dtype='f4')
+    maxRecombinationToInitial = np.empty(
+        (numberElectronTemperatures, numberIonDensities), dtype='f8')
+    maxIonizationToInitial = np.empty(
+        (numberElectronTemperatures, numberIonDensities), dtype='f8')
 
     assert (axisDictConditions['electronTemperature'] == 0)
     assert (axisDictConditions['ionDensity'] == 1)
 
-    print("loading scan data for ")
+    print()
+    print("loading scan data for summary plot...")
     for i, config in enumerate(tqdm(plottingConfigs)):
         if(config.loadRaw):
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = PlotAtomicPopulations.preProcess(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY \
+                    = PlotAtomicPopulations.preProcess(config)
 
-            # SCFLY scan will not contain FLYonPIC data
+            # SCFLY scan will never contain FLYonPIC data
             del mean
             del stdDev
             del axisDict_FLYonPIC
@@ -48,9 +51,10 @@ def processScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float):
             del timeSteps_FLYonPIC
         else:
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = PlotAtomicPopulations.loadProcessed(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY \
+                    = PlotAtomicPopulations.loadProcessed(config)
 
-            # SCFLY scan will not contain FLYonPIC data
+            # SCFLY scan will never contain FLYonPIC data
             del mean
             del stdDev
             del axisDict_FLYonPIC
@@ -65,47 +69,45 @@ def processScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float):
             atomicConfigNumbers_SCFLY)
 
         # initial charge State
-        initialChargeState = chargeStateData[:,initialChargeState]
+        initialChargeStateAbundance = chargeStateData[:, initialChargeState]
 
         # sum over all recombination states ... charge states below init charge state of FLYonPIC
         sumRecombinationStates = np.zeros_like(chargeStateData[:,0])
-        for i in range(initialChargeState):
-            sumRecombinationStates += chargeStateData[:,i]
+        for z in range(initialChargeState):
+            sumRecombinationStates += chargeStateData[:,z]
 
         # sum over all (above initial charge state) states
         sumAboveInitial = np.zeros_like(chargeStateData[:,0])
-        for i in range(initialChargeState + 1, config.atomicNumber + 1):
-            sumAboveInitial += chargeStateData[:,i]
+        for z in range(initialChargeState + 1, config.atomicNumber + 1):
+            sumAboveInitial += chargeStateData[:,z]
 
-        # remove below FLYonPIC resolution to avoid nans
-        initialChargeState_nonZero = np.where(
-            initialChargeState <= ZeroCutoffLimit,
-            ZeroCutoffLimit,
-            initialChargeState)
+        # remove everything below ZeroCutoffLimit, to avoid Nans
+        initialChargeStateAbundance_nonZero = np.where(
+            initialChargeStateAbundance <= summaryConfig.zeroCutoffLimit,
+            summaryConfig.zeroCutoffLimit, initialChargeStateAbundance)
 
         # compare to relative abundance in initial charge state
         maxRecombinationToInitial[conditions[i]] = np.max(
-            sumRecombinationStates / initialChargeState_nonZero)
+            sumRecombinationStates / initialChargeStateAbundance)
         maxIonizationToInitial[conditions[i]] = np.max(
-            sumAboveInitial / initialChargeState_nonZero)
+            sumAboveInitial / initialChargeStateAbundance)
 
     axisDict = {'electronTemperature':0, "ionDensity":1}
     return maxRecombinationToInitial, maxIonizationToInitial, axisDict
 
 @typeguard.typechecked
-def loadScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float,
-                 additonalDataName : str = ""):
+def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig, summaryConfig : cfg.SummaryScanPlot.PlotConfig):
     """load scan data either from file or from raw"""
 
-    if additonalDataName != "":
-        addName = "_" + additonalDataName
+    if summaryConfig.additionalDataName != "":
+        addName = "_" + summaryConfig.additionalDataName
     else:
         addName = ""
 
-    if scanConfig.loadRaw:
+    if summaryConfig.loadRawSummaryData:
         # do processing of scanData
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \
-            = processScanData(scanConfig, ZeroCutoffLimit)
+            = processScanData(scanConfig, summaryConfig)
 
         # write pre-processed scan summary data to file
         np.savetxt(scanConfig.processedDataStoragePath
@@ -116,7 +118,7 @@ def loadScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float,
                    + "maxIonizationToInitial_"
                    + scanConfig.dataSeriesName + addName + ".data",
                    maxIonizationToInitial)
-        with open(config.processedDataStoragePath + "axisDict_ScanSummary_"
+        with open(scanConfig.processedDataStoragePath + "axisDict_ScanSummary_"
                   + scanConfig.dataSeriesName + addName + ".dict", 'w') as File:
             json.dump(axisDict, File)
     else:
@@ -127,14 +129,14 @@ def loadScanData(scanConfig : cfg.Scan.ScanConfig, ZeroCutoffLimit : float,
         maxIonizationToInitial = np.loadtxt(
             scanConfig.processedDataStoragePath + "maxIonizationToInitial_"
             + scanConfig.dataSeriesName + addName + ".data")
-        with open(config.processedDataStoragePath + "axisDict_ScanSummary_"
+        with open(scanConfig.processedDataStoragePath + "axisDict_ScanSummary_"
                   + scanConfig.dataSeriesName + addName + ".dict", 'r') as File:
             axisDict = json.load(File)
 
     return maxRecombinationToInitial, maxIonizationToInitial, axisDict
 
 @typeguard.typechecked
-def checkScanConfigsCanBeStitched(scanConfigs : list[cfg.Scan.ScanConfig]):
+def checkScanConfigsCanBeStitched(scanConfigs : list[cfg.SCFLYScan.ScanConfig]):
     """
     check that given list of scanConfigs can be stitched together
 
@@ -169,55 +171,89 @@ def checkScanConfigsCanBeStitched(scanConfigs : list[cfg.Scan.ScanConfig]):
             print("Warning!: inconsistent figure storage paths, using first one only")
 
 @typeguard.typechecked
-def plotSummary(scanConfigs : list[cfg.Scan.ScanConfig],
-                zeroCutoffLimit : float, seriesName : str):
+def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
+                summaryConfig : cfg.SummaryScanPlot.PlotConfig):
     """plot summary plot of stitched together scan"""
 
     # sanity check before we stitch
     checkScanConfigsCanBeStitched(scanConfigs)
 
     # prepare plot
-    figure, axes = plt.subplots(ncols=2, nrows=1, dpi=300)
-    axes[0].set_title(
-        "population in recombination vs initial charge state: "
-         + seriesName)
-    axes[1].set_title(
-        "population in ionization vs initial charge state: " + seriesName)
+    figure, axes = plt.subplots(ncols=2, nrows=1, dpi=300, figsize=(10,5))
+    figure.suptitle("Relative Abundance Quotients: "
+                    + summaryConfig.seriesName)
 
-    axes[0].set_xlabel("electron temperature")
-    axes[0].set_ylabel("ion density")
+    axes[0].set_title("recombination vs initial charge state")
+    axes[1].set_title("ionized states vs initial charge state")
+
+    axes[0].set_xlabel("electron temperature [eV]")
+    axes[0].set_ylabel("ion density [1/cm^3]")
     axes[0].set_yscale("log")
     axes[0].set_xscale("log")
-    axes[1].set_xlabel("electron temperature")
-    axes[1].set_ylabel("ion density")
+
+    axes[1].set_xlabel("electron temperature [eV]")
+    axes[1].set_ylabel("ion density [1/cm^3]")
     axes[1].set_yscale("log")
     axes[1].set_xscale("log")
 
-
     # plot data for each part
     print("plotting summary of scan...")
-    for scanConfig in tqdm(scanConfigs):
+    for scanConfig in scanConfigs:
         # get data
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \
-            = loadScanData(scanConfig, zeroCutoffLimit)
+            = loadScanData(scanConfig, summaryConfig)
 
         assert ((axisDict['electronTemperature'] == 0)
-            and (axisDict['ionDensities'] == 1))
+            and (axisDict['ionDensity'] == 1))
 
         temperatures, densities = np.meshgrid(scanConfig.electronTemperatures,
                              scanConfig.ionDensities)
 
-        axes[0].pcolormesh(temperatures, densities, maxRecombinationToInitial,
-                           cmap=plt.cm.cividis, norm=color.LogNorm(vmin=1.e-7))
+        left = axes[0].pcolormesh(
+            temperatures, densities, maxRecombinationToInitial,
+            cmap=plt.cm.viridis, norm=color.LogNorm(vmin=1.e-7))
 
-        axes[1].pcolormesh(temperatures, densities, maxIonizationToInitial,
-                           cmap=plt.cm.cividis, norm=color.LogNorm(vmin=1.e-7))
+        right = axes[1].pcolormesh(
+            temperatures, densities, maxIonizationToInitial,
+            cmap=plt.cm.viridis, norm=color.LogNorm(vmin=1.e-2, vmax=1.e2))
 
-    plt.colorbar()
+    figure.colorbar(left, ax = axes[0])
+    figure.colorbar(right, ax = axes[1])
     figure.tight_layout()
-    plt.savefig(scanConfigs[0].figureStoragePath + "AtomicPopulation_diff_" + config.dataName)
+    plt.savefig(scanConfigs[0].figureStoragePath + "SummaryPlot_"
+                + scanConfig.dataSeriesName)
     plt.close(figure)
 
 
 if __name__ == "__main__":
-    pass
+    processedDataStoragePath = "preProcessedData/"
+
+    scanConfig_Cu = cfg.SCFLYScan.ScanConfig(
+        atomicNumber = 29,
+        SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/29_atomicStateNaming.input",
+        atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.29",
+        electronTemperatures = np.concatenate([np.arange(1,10)*1e2, (np.arange(10)+1)*1e3]), # eV
+        ionDensities = np.concatenate([np.arange(1,10)*1e21, (np.arange(10)+1)*1e22]), # 1/cm^3
+        timePoints = np.arange(101) * 3.3e-17, # s
+        initialStateLevelVector = (2, 8, 17, 0, 0, 0, 0, 0, 0, 0),
+        outputBasePath = "/home/marre55/scflyInput/",
+        SCFLYBinaryPath = "/home/marre55/scfly/code/exe/scfly",
+        outputFileName = "xout",
+        dataSeriesName ="Cu_recombination_IPD",
+        numberStatesToPlot = 870,
+        colorMap = plt.cm.tab20b,
+        numColorsInColorMap = 20,
+        processedDataStoragePath = processedDataStoragePath,
+        figureStoragePath = "SCFLY_Cu_Recombination_IPD_ScanImages/",
+        runSCFLY = False,
+        plotEachSim = False,
+        plotSummary = True)
+
+    summaryConfig_Cu = cfg.SummaryScanPlot.PlotConfig(
+        zeroCutoffLimit = 1.e-7,
+        loadRawEachSCLFYSim = False,
+        loadRawSummaryData = True,
+        additionalDataName = "",
+        seriesName = "Cu Initial: 2+")
+
+    plotSummary([scanConfig_Cu], summaryConfig_Cu)

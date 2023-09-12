@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 import Reader
 import SCFlyTools.AtomicConfigNumberConversion as conv
-import Config.AtomicPopulationPlot as cfg
+import Config as cfg
 import ChargeStateColors
 
 import matplotlib.pyplot as plt
@@ -18,12 +18,10 @@ from labellines import labelLines
 
 
 @typeguard.typechecked
-def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
+def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     if(config.FLYonPICAtomicStateInputDataFile == ""):
-        print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
         return None, None, None, None, None
     if(len(config.FLYonPICOutputFileNames) == 0):
-        print("SKIPPING FLYonPIC: missing FLYonPIC_fileNames")
         return None, None, None, None, None
 
     # load atomic input Data for common indexation of atomic states
@@ -92,12 +90,10 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlotConfig):
     return mean, stdDev, axisDict, atomicConfigNumbers, timeSteps
 
 @typeguard.typechecked
-def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
+def loadSCFLYdata(config : cfg.AtomicPopulationPlot.PlotConfig):
     if(config.SCFLYatomicStateNamingFile == ""):
-        print("SKIPPING SCFLY: missing SCFLY_stateNames file")
         return None, None, None, None
     if(config.SCFLYOutputFileName == ""):
-        print("SKIPPING SCFLY: missing SCFLY_output file")
         return None, None, None, None
 
     # load data
@@ -126,7 +122,7 @@ def loadSCFLYdata(config : cfg.AtomicPopulationPlotConfig):
     return atomicPopulationDataSorted, axisDict, atomicConfigNumbersSorted, timeSteps
 
 @typeguard.typechecked
-def reduceToPerChargeState(config : cfg.AtomicPopulationPlotConfig, populationData, axisDict, atomicConfigNumbers):
+def reduceToPerChargeState(config : cfg.AtomicPopulationPlot.PlotConfig, populationData, axisDict, atomicConfigNumbers):
     shape = np.shape(populationData)
     numberTimeSteps = shape[axisDict['timeStep']]
     numberAtomicStates = shape[axisDict['atomicState']]
@@ -148,7 +144,7 @@ def reduceToPerChargeState(config : cfg.AtomicPopulationPlotConfig, populationDa
     return chargeStateData, axisDict
 
 @typeguard.typechecked
-def preProcess(config : cfg.AtomicPopulationPlotConfig):
+def preProcess(config : cfg.AtomicPopulationPlot.PlotConfig):
     """pre process raw data, store pre processed data at config specified path and return preprocessed data"""
     mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = loadFLYonPICData(config)
     atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadSCFLYdata(config)
@@ -188,19 +184,17 @@ def preProcess(config : cfg.AtomicPopulationPlotConfig):
         atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY
 
 @typeguard.typechecked
-def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
+def loadProcessed(config : cfg.AtomicPopulationPlot.PlotConfig):
     """load previously processed atomic population data from file"""
 
     ## FLYonPIC
     if(config.FLYonPICAtomicStateInputDataFile == ""):
-        print("SKIPPING FLYonPIC: missing FLYonPIC atomic state data input file")
         mean = None
         stdDev = None
         axisDict_FLYonPIC = None
         atomicConfigNumbers_FLYonPIC = None
         timeSteps_FLYonPIC = None
     elif(len(config.FLYonPICOutputFileNames) == 0):
-        print("SKIPPING FLYonPIC: missing FLYonPIC_fileNames")
         mean = None
         stdDev = None
         axisDict_FLYonPIC = None
@@ -218,13 +212,11 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
 
     ## SCFLY
     if(config.SCFLYatomicStateNamingFile == ""):
-        print("SKIPPING SCFLY: missing SCFLY_stateNames file")
         atomicPopulationData = None
         axisDict_SCFLY = None
         atomicConfigNumbers_SCFLY = None
         timeSteps_SCFLY = None
     elif(config.SCFLYOutputFileName == ""):
-        print("SKIPPING SCFLY: missing SCFLY_output file")
         atomicPopulationData = None
         axisDict_SCFLY = None
         atomicConfigNumbers_SCFLY = None
@@ -240,7 +232,7 @@ def loadProcessed(config : cfg.AtomicPopulationPlotConfig):
         atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY
 
 @typeguard.typechecked
-def plot_additive(config : cfg.AtomicPopulationPlotConfig,
+def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
                   mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                   atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
     """plot atomic populations as stacked line plot on linear scale"""
@@ -395,7 +387,7 @@ def plot_additive(config : cfg.AtomicPopulationPlotConfig,
     print()
 
 @typeguard.typechecked
-def plot_absolute(config : cfg.AtomicPopulationPlotConfig,
+def plot_absolute(config : cfg.AtomicPopulationPlot.PlotConfig,
                   mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                   atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
     """plot atomic populations on logarithmic scale"""
@@ -476,7 +468,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlotConfig,
     print()
 
 @typeguard.typechecked
-def plotSurplusByState(config : cfg.AtomicPopulationPlotConfig,
+def plotSurplusByState(config : cfg.AtomicPopulationPlot.PlotConfig,
                      mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                      atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
     """plot difference (FLYonPIC - SCFLY) for each atomic state and each step"""
@@ -526,7 +518,7 @@ def plotSurplusByState(config : cfg.AtomicPopulationPlotConfig,
     plt.close(figure)
 
 @typeguard.typechecked
-def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlotConfig,
+def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlot.PlotConfig,
                   mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                   atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
 
@@ -575,7 +567,7 @@ def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlotCo
     plt.close(figure)
 
 @typeguard.typechecked
-def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPICInitialChargeState : int,
+def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FLYonPICInitialChargeState : int,
                                 atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps):
     """plot SCFLY charge state populations below FLYonPIC initial charge state over time"""
     colorChargeStates = ChargeStateColors.getChargeStateColors(config, additionalIndices = [-1])
@@ -655,7 +647,7 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlotConfig, FLYonPI
     print()
 
 @typeguard.typechecked
-def plotChargeStates(config : cfg.AtomicPopulationPlotConfig,
+def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
                      mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                      atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
     """plot charge states relative abundance on logarithmic scale"""
@@ -738,7 +730,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlotConfig,
 
 
 @typeguard.typechecked
-def plot_all(tasks_general : list[cfg.AtomicPopulationPlotConfig], tasks_diff : list[cfg.AtomicPopulationPlotConfig], tasks_recombination : list[cfg.AtomicPopulationPlotConfig], FLYonPICInitialChargeState : int = 0):
+def plot_all(tasks_general : list[cfg.AtomicPopulationPlot.PlotConfig], tasks_diff : list[cfg.AtomicPopulationPlot.PlotConfig], tasks_recombination : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPICInitialChargeState : int = 0):
     # plot additive and absolute for atomic states and absolute for charge states
     for config in tasks_general:
         print(config.dataName)
@@ -830,7 +822,7 @@ if __name__ == "__main__":
     colorMap_Li = plt.cm.tab10
     numColorsInColorMap_Li = 10
 
-    config_FLYonPIC_30ppc_Ar = cfg.AtomicPopulationPlotConfig(
+    config_FLYonPIC_30ppc_Ar = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
         SCFLYatomicStateNamingFile =        "",
         FLYonPICOutputFileNames =           fileNames_30ppc_Ar,
@@ -847,7 +839,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_30ppc_Ar",
         loadRaw =                           True)
 
-    config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlotConfig(
+    config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
         SCFLYatomicStateNamingFile =        "",
         FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
@@ -864,7 +856,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_60ppc_Ar",
         loadRaw =                           True)
 
-    config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
+    config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
         FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
@@ -881,7 +873,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
         loadRaw =                           True)
 
-    config_SCFLY_Ar = cfg.AtomicPopulationPlotConfig(
+    config_SCFLY_Ar = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
         FLYonPICOutputFileNames =           [],
@@ -898,7 +890,7 @@ if __name__ == "__main__":
         dataName =                          "SCFLY_Ar",
         loadRaw =                           True)
 
-    config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
+    config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
         FLYonPICOutputFileNames =           fileNames_30ppc_Li,
@@ -915,7 +907,7 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_30ppc_SCFLY_Li",
         loadRaw =                           True)
 
-    config_SCFLY_Li = cfg.AtomicPopulationPlotConfig(
+    config_SCFLY_Li = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
         FLYonPICOutputFileNames =           [],
