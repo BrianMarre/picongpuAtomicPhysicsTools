@@ -2,8 +2,6 @@ import pydantic
 
 class PlotConfig(pydantic.BaseModel):
     """plotting config for summary plot"""
-    zeroCutoffLimit : float
-    """cut off for initial charge state relative abundance"""
     loadRawEachSCLFYSim : bool
     """switch for loading each SCFLY simulation results from raw data"""
     loadRawSummaryData : bool

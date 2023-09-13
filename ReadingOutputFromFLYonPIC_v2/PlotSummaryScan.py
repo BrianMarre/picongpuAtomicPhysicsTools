@@ -6,6 +6,7 @@ import numpy as np
 
 import PlotAtomicPopulations
 import ScanSCFLY as scan
+import SCFlyTools
 import Config as cfg
 
 import matplotlib.pyplot as plt
@@ -14,11 +15,11 @@ import matplotlib.scale as scale
 
 @typeguard.typechecked
 def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
-                    summaryConfig : cfg.SummaryScanPlot.PlotConfig):
+                    summaryConfig : cfg.SummaryScanPlot.PlotConfig,
+                    tasks):
     """extract summary from data of entire scan"""
 
-    baseConfigs, conditions, axisDictConditions \
-        = scan.generateBaseConfigs(scanConfig)
+    baseConfigs, conditions, axisDictConditions = tasks
     plottingConfigs = scan.generatePlottingConfigs(
         scanConfig, baseConfigs, summaryConfig.loadRawEachSCLFYSim)
 
@@ -81,11 +82,6 @@ def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
         for z in range(initialChargeState + 1, config.atomicNumber + 1):
             sumAboveInitial += chargeStateData[:,z]
 
-        # remove everything below ZeroCutoffLimit, to avoid Nans
-        initialChargeStateAbundance_nonZero = np.where(
-            initialChargeStateAbundance <= summaryConfig.zeroCutoffLimit,
-            summaryConfig.zeroCutoffLimit, initialChargeStateAbundance)
-
         # compare to relative abundance in initial charge state
         maxRecombinationToInitial[conditions[i]] = np.max(
             sumRecombinationStates / initialChargeStateAbundance)
@@ -96,7 +92,9 @@ def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
     return maxRecombinationToInitial, maxIonizationToInitial, axisDict
 
 @typeguard.typechecked
-def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig, summaryConfig : cfg.SummaryScanPlot.PlotConfig):
+def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
+                 summaryConfig : cfg.SummaryScanPlot.PlotConfig,
+                 tasks):
     """load scan data either from file or from raw"""
 
     if summaryConfig.additionalDataName != "":
@@ -107,7 +105,7 @@ def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig, summaryConfig : cfg.Summ
     if summaryConfig.loadRawSummaryData:
         # do processing of scanData
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \
-            = processScanData(scanConfig, summaryConfig)
+            = processScanData(scanConfig, summaryConfig, tasks)
 
         # write pre-processed scan summary data to file
         np.savetxt(scanConfig.processedDataStoragePath
@@ -172,6 +170,7 @@ def checkScanConfigsCanBeStitched(scanConfigs : list[cfg.SCFLYScan.ScanConfig]):
 
 @typeguard.typechecked
 def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
+                tasks,
                 summaryConfig : cfg.SummaryScanPlot.PlotConfig):
     """plot summary plot of stitched together scan"""
 
@@ -198,10 +197,10 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
 
     # plot data for each part
     print("plotting summary of scan...")
-    for scanConfig in scanConfigs:
+    for i, scanConfig in enumerate(scanConfigs):
         # get data
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \
-            = loadScanData(scanConfig, summaryConfig)
+            = loadScanData(scanConfig, summaryConfig, tasks[i])
 
         assert ((axisDict['electronTemperature'] == 0)
             and (axisDict['ionDensity'] == 1))
@@ -250,7 +249,6 @@ if __name__ == "__main__":
         plotSummary = True)
 
     summaryConfig_Cu = cfg.SummaryScanPlot.PlotConfig(
-        zeroCutoffLimit = 1.e-7,
         loadRawEachSCLFYSim = False,
         loadRawSummaryData = True,
         additionalDataName = "",
