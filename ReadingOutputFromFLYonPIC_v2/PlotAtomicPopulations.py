@@ -627,7 +627,7 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FL
     # plot below charge states
     for z in range(FLYonPICInitialChargeState):
         axes.plot(timeSteps, belowFLYonPICInitial[:, z], linewidth=1, alpha=0.5, linestyle="--",
-                    color=colorChargeStates[z], label="[SCFLY] chargeState" + str(z))
+                    color=colorChargeStates[z], label="[SCFLY] chargeState " + str(z))
     # plot other
     axes.plot(timeSteps, aboveFLYonPICInitial, linewidth=1, alpha=0.5, linestyle="--",
                 color=colorChargeStates[-1], label="[SCFLY] other")

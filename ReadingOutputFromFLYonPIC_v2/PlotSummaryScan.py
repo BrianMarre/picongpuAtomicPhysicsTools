@@ -205,8 +205,8 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
         assert ((axisDict['electronTemperature'] == 0)
             and (axisDict['ionDensity'] == 1))
 
-        temperatures, densities = np.meshgrid(scanConfig.electronTemperatures,
-                             scanConfig.ionDensities)
+        densities, temperatures = np.meshgrid(
+            scanConfig.ionDensities, scanConfig.electronTemperatures)
 
         left = axes[0].pcolormesh(
             temperatures, densities, maxRecombinationToInitial,

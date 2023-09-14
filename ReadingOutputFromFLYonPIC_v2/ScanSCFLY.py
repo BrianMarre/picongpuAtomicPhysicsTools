@@ -1,9 +1,7 @@
 import pydantic
 import typeguard
 import typing
-
-import time
-import collections
+import os
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -125,7 +123,7 @@ def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPI
 @typeguard.typechecked
 def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 1):
     for scanConfig in tqdm(scans):
-        # create scan baseConfigs
+        # create scan baseConfigsFalse
         baseConfigs, conditions, axisDict_conditions = generateBaseConfigs(scanConfig)
 
         # optionally run SCFLY
@@ -133,10 +131,13 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 
             generateSetups(baseConfigs)
             runSingleSCFLYScan(scanConfig, baseConfigs, chunkSize)
 
+        # create storage storage directory if it does not exist
+        os.makedirs(scanConfig.figureStoragePath, exist_ok=True)
+
         # optionally plot results
         if scanConfig.plotEachSim:
             plotConfigs = generatePlottingConfigs(scanConfig, baseConfigs)
-            initialChargeState = scanConfig.atomicNumber - np.sum(scanConfig.initialStateLevelVector)
+            initialChargeState = int(scanConfig.atomicNumber - np.sum(scanConfig.initialStateLevelVector))
             plotEachSCFLYScan(plotConfigs, initialChargeState)
 
         if scanConfig.plotSummary:
@@ -144,7 +145,7 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 
                 [scanConfig],
                 [(baseConfigs, conditions, axisDict_conditions)],
                 cfg.SummaryScanPlot.PlotConfig(
-                    loadRawEachSCLFYSim = True,
+                    loadRawEachSCLFYSim = False, # @todo change back, Brian Marre
                     loadRawSummaryData = True,
                     additionalDataName = "",
                     seriesName = scanConfig.dataSeriesName))
@@ -217,10 +218,10 @@ if __name__=="__main__":
         numColorsInColorMap = 20,
         processedDataStoragePath = processedDataStoragePath,
         figureStoragePath = "SCFLY_Cu_2_Recombination_IPD/",
-        runSCFLY = True,
+        runSCFLY = False,
         plotEachSim = False,
         plotSummary = True)
 
-    scans = [scanConfig_Cu_2]#scanConfig_Cu, scanConfig_Ar]
+    scans = [scanConfig_Cu_2, scanConfig_Cu, scanConfig_Ar]
     runScanList(scans, chunkSize)
 
