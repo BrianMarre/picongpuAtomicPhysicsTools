@@ -103,11 +103,6 @@ def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
                     dict[str, int]]):
     """load scan data either from file or from raw"""
 
-    if summaryConfig.additionalDataName != "":
-        addName = "_" + summaryConfig.additionalDataName
-    else:
-        addName = ""
-
     if summaryConfig.loadRawSummaryData:
         # do processing of scanData
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \
@@ -116,25 +111,25 @@ def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
         # write pre-processed scan summary data to file
         np.savetxt(scanConfig.processedDataStoragePath
                    + "maxRecombinationToInitial_"
-                   + scanConfig.dataSeriesName + addName + ".data",
+                   + scanConfig.dataSeriesName + ".data",
                    maxRecombinationToInitial)
         np.savetxt(scanConfig.processedDataStoragePath
                    + "maxIonizationToInitial_"
-                   + scanConfig.dataSeriesName + addName + ".data",
+                   + scanConfig.dataSeriesName + ".data",
                    maxIonizationToInitial)
         with open(scanConfig.processedDataStoragePath + "axisDict_ScanSummary_"
-                  + scanConfig.dataSeriesName + addName + ".dict", 'w') as File:
+                  + scanConfig.dataSeriesName + ".dict", 'w') as File:
             json.dump(axisDict, File)
     else:
         # load previously processed data from file
         maxRecombinationToInitial = np.loadtxt(
             scanConfig.processedDataStoragePath + "maxRecombinationToInitial_"
-            + scanConfig.dataSeriesName + addName + ".data")
+            + scanConfig.dataSeriesName + ".data")
         maxIonizationToInitial = np.loadtxt(
             scanConfig.processedDataStoragePath + "maxIonizationToInitial_"
-            + scanConfig.dataSeriesName + addName + ".data")
+            + scanConfig.dataSeriesName + ".data")
         with open(scanConfig.processedDataStoragePath + "axisDict_ScanSummary_"
-                  + scanConfig.dataSeriesName + addName + ".dict", 'r') as File:
+                  + scanConfig.dataSeriesName + ".dict", 'r') as File:
             axisDict = json.load(File)
 
     return maxRecombinationToInitial, maxIonizationToInitial, axisDict
@@ -176,12 +171,12 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
 
         if i == 0:
             axePairLeft.set_title("recombination vs initial charge state:\n"
-                                 + summaryConfig.seriesName)
+                                 + summaryConfig.dataSetName)
             axePairRight.set_title("ionized states vs initial charge state:\n"
-                                 + summaryConfig.seriesName)
+                                 + summaryConfig.dataSetName)
         else:
-            axePairLeft.set_title(summaryConfig.seriesName)
-            axePairRight.set_title(summaryConfig.seriesName)
+            axePairLeft.set_title(summaryConfig.dataSetName)
+            axePairRight.set_title(summaryConfig.dataSetName)
 
         # prepare plots
         axePairLeft.set_xlabel("electron temperature [eV]")
@@ -253,8 +248,7 @@ if __name__ == "__main__":
     summaryConfig_Cu = cfg.SummaryScanPlot.PlotConfig(
         loadRawEachSCLFYSim = False,
         loadRawSummaryData = True,
-        additionalDataName = "",
-        seriesName = "Cu Initial: 2+")
+        dataSetName = "Cu Initial: 2+")
 
     # create scan baseConfigs
     baseConfigs, conditions, axisDict_conditions = scan.generateBaseConfigs(

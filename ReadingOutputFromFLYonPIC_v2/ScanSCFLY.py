@@ -121,8 +121,15 @@ def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPI
         plotter.plot_all([plotConfig], [], [plotConfig], FLYonPICInitialChargeState)
 
 @typeguard.typechecked
-def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 1):
-    for scanConfig in tqdm(scans):
+def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
+                chunkSize : int = 1,
+                plotCombined : bool = False,
+                summaryPlotConfigs : list[cfg.SummaryScanPlot.PlotConfig] = None):
+
+    tasksList = []
+    generatedSummaryPlotConfigs = []
+
+    for scanConfig in tqdm(scanConfigs):
         # create scan baseConfigs
         baseConfigs, conditions, axisDict_conditions = generateBaseConfigs(scanConfig)
 
@@ -140,19 +147,44 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 
             initialChargeState = int(scanConfig.atomicNumber - np.sum(scanConfig.initialStateLevelVector))
             plotEachSCFLYScan(plotConfigs, initialChargeState)
 
-        if scanConfig.plotSummary:
+        if ((not plotCombined) and scanConfig.plotSummary):
+            # plot for each scan separately
             summary.plotSummary(
                 [scanConfig],
                 [(baseConfigs, conditions, axisDict_conditions)],
                 [cfg.SummaryScanPlot.PlotConfig(
-                    loadRawEachSCLFYSim = False, # @todo change back, Brian Marre
+                    loadRawEachSCLFYSim = True,
                     loadRawSummaryData = True,
-                    additionalDataName = "",
-                    seriesName = scanConfig.dataSeriesName)])
+                    dataSetName = scanConfig.dataSeriesName)])
+        else:
+            tasksList.append((baseConfigs, conditions, axisDict_conditions))
+            if summaryPlotConfigs is None:
+                generatedSummaryPlotConfigs.append(
+                    cfg.SummaryScanPlot.PlotConfig(
+                        loadRawEachSCLFYSim = True,
+                        loadRawSummaryData = True,
+                        dataSetName = scanConfig.dataSeriesName))
 
         # save temperatures and ionDensities for reference
-        np.savetxt(scanConfig.figureStoragePath + "electronTemperatures.txt", scanConfig.electronTemperatures)
-        np.savetxt(scanConfig.figureStoragePath + "ionDensities.txt", scanConfig.ionDensities)
+        np.savetxt(scanConfig.figureStoragePath + "electronTemperatures_"
+                   + scanConfig.dataSeriesName + ".txt",
+                   scanConfig.electronTemperatures)
+        np.savetxt(scanConfig.figureStoragePath + "ionDensities_"
+                   + scanConfig.dataSeriesName + ".txt", scanConfig.ionDensities)
+
+    # optional, do combined plot
+    if (plotCombined and (summaryPlotConfigs is None)):
+        # no summaryPlotConfigs provided -> use generated ones
+        summary.plotSummary(
+            scanConfigs,
+            tasksList,
+            generatedSummaryPlotConfigs)
+    elif plotCombined and (summaryPlotConfigs is not None):
+        # use provided configs
+        summary.plotSummary(
+            scanConfigs,
+            tasksList,
+            summaryPlotConfigs)
 
 
 if __name__=="__main__":

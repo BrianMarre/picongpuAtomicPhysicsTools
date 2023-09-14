@@ -6,7 +6,5 @@ class PlotConfig(pydantic.BaseModel):
     """switch for loading each SCFLY simulation results from raw data"""
     loadRawSummaryData : bool
     """switch for loading summary plot data results from raw data"""
-    additionalDataName : str
-    """name specialization for different zeroCutoffLimits"""
-    seriesName : str
-    """general name for set of scan"""
+    dataSetName : str
+    """name to use for data set"""
