@@ -16,7 +16,10 @@ import matplotlib.scale as scale
 @typeguard.typechecked
 def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
                     summaryConfig : cfg.SummaryScanPlot.PlotConfig,
-                    tasks):
+                    tasks : tuple[
+                    list[SCFlyTools.BaseConfig.BaseConfig],
+                    list[tuple[int,int]],
+                    dict[str, int]]):
     """extract summary from data of entire scan"""
 
     baseConfigs, conditions, axisDictConditions = tasks
@@ -94,7 +97,10 @@ def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
 @typeguard.typechecked
 def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
                  summaryConfig : cfg.SummaryScanPlot.PlotConfig,
-                 tasks):
+                 tasks : tuple[
+                    list[SCFlyTools.BaseConfig.BaseConfig],
+                    list[tuple[int,int]],
+                    dict[str, int]]):
     """load scan data either from file or from raw"""
 
     if summaryConfig.additionalDataName != "":
@@ -133,74 +139,65 @@ def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
 
     return maxRecombinationToInitial, maxIonizationToInitial, axisDict
 
-@typeguard.typechecked
-def checkScanConfigsCanBeStitched(scanConfigs : list[cfg.SCFLYScan.ScanConfig]):
-    """
-    check that given list of scanConfigs can be stitched together
-
-    passes silently if ok
-    """
-    first = scanConfigs[0]
-
-    atomicNumber = first.atomicNumber
-    namingFile = first.SCFLYatomicStateNamingFile
-    timePoints = first.timePoints
-    initialState = first.initialStateLevelVector
-    SCFLYBinaryPath = first.SCFLYBinaryPath
-    figureStoragePath = first.figureStoragePath
-
-    for i, scanConfig in enumerate(scanConfigs):
-        if (scanConfig.atomicNumber != atomicNumber):
-            raise RuntimeError("unable to stitch scans together["
-                + str(i) + ": atomic number different!]")
-        if (scanConfig.SCFLYatomicStateNamingFile != namingFile):
-            raise RuntimeError("unable to stitch scans together["
-                + str(i) + ": naming file different!]")
-        if np.any(scanConfig.timePoints != timePoints):
-            raise RuntimeError("unable to stitch scans together["
-                + str(i) + ": timePoints different!]")
-        if np.any(scanConfig.initialStateLevelVector != initialState):
-            raise RuntimeError("unable to stitch scans together["
-                + str(i) + ": initial state different!]")
-        if (scanConfig.SCFLYBinaryPath != SCFLYBinaryPath):
-            raise RuntimeError("unable to stitch scans together["
-                + str(i) + ": different SCFLY binary!]")
-        if (figureStoragePath != scanConfig.figureStoragePath):
-            print("Warning!: inconsistent figure storage paths, using first one only")
 
 @typeguard.typechecked
 def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
-                tasks,
-                summaryConfig : cfg.SummaryScanPlot.PlotConfig):
-    """plot summary plot of stitched together scan"""
+                tasksList : list[tuple[
+                    list[SCFlyTools.BaseConfig.BaseConfig],
+                    list[tuple[int,int]],
+                    dict[str, int]]],
+                summaryConfigList : list[cfg.SummaryScanPlot.PlotConfig]):
+    """plot summary plot for each scanConfig into combined figure"""
 
-    # sanity check before we stitch
-    checkScanConfigsCanBeStitched(scanConfigs)
+    # check for consistent storage paths
+    firstFigureStoragePath = scanConfigs[0].figureStoragePath
+    for scanConfig in scanConfigs[1:]:
+        if scanConfig.figureStoragePath != firstFigureStoragePath:
+            print("Warning: inconsistent figure storage paths!\n"
+                  "Summary plot will be stored at " + firstFigureStoragePath)
+            break
 
-    # prepare plot
-    figure, axes = plt.subplots(ncols=2, nrows=1, dpi=300, figsize=(10,5))
-    figure.suptitle("Relative Abundance Quotients: "
-                    + summaryConfig.seriesName)
+    numberScans = len(scanConfigs)
+    figure, axes = plt.subplots(ncols=2, nrows=numberScans,
+                                dpi=200, figsize=(8,4*numberScans))
+    figure.suptitle("Relative Abundance Quotients:")
 
-    axes[0].set_title("recombination vs initial charge state")
-    axes[1].set_title("ionized states vs initial charge state")
+    for i, scanConfig in enumerate(tqdm(scanConfigs)):
+        summaryConfig = summaryConfigList[i]
+        tasks = tasksList[i]
 
-    axes[0].set_xlabel("electron temperature [eV]")
-    axes[0].set_ylabel("ion density [1/cm^3]")
-    axes[0].set_yscale("log")
-    axes[0].set_xscale("log")
+        # dimensionality depends on nrows
+        if numberScans > 1:
+            axePairLeft = axes[i, 0]
+            axePairRight = axes[i, 1]
+        else:
+            axePairLeft = axes[0]
+            axePairRight = axes[1]
 
-    axes[1].set_xlabel("electron temperature [eV]")
-    axes[1].set_ylabel("ion density [1/cm^3]")
-    axes[1].set_yscale("log")
-    axes[1].set_xscale("log")
+        if i == 0:
+            axePairLeft.set_title("recombination vs initial charge state:\n"
+                                 + summaryConfig.seriesName)
+            axePairRight.set_title("ionized states vs initial charge state:\n"
+                                 + summaryConfig.seriesName)
+        else:
+            axePairLeft.set_title(summaryConfig.seriesName)
+            axePairRight.set_title(summaryConfig.seriesName)
 
-    # plot data for each part
-    print("plotting summary of scan...")
-    for i, scanConfig in enumerate(scanConfigs):
+        # prepare plots
+        axePairLeft.set_xlabel("electron temperature [eV]")
+        axePairLeft.set_ylabel("ion density [1/cm^3]")
+        axePairLeft.set_yscale("log")
+        axePairLeft.set_xscale("log")
+
+        axePairRight.set_xlabel("electron temperature [eV]")
+        axePairRight.set_ylabel("ion density [1/cm^3]")
+        axePairRight.set_yscale("log")
+        axePairRight.set_xscale("log")
+
+        # plot data for each part
         # get data
         maxRecombinationToInitial, maxIonizationToInitial, axisDict \
-            = loadScanData(scanConfig, summaryConfig, tasks[i])
+            = loadScanData(scanConfig, summaryConfig, tasks)
 
         assert ((axisDict['electronTemperature'] == 0)
             and (axisDict['ionDensity'] == 1))
@@ -208,19 +205,24 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
         densities, temperatures = np.meshgrid(
             scanConfig.ionDensities, scanConfig.electronTemperatures)
 
-        left = axes[0].pcolormesh(
+        left = axePairLeft.pcolormesh(
             temperatures, densities, maxRecombinationToInitial,
             cmap=plt.cm.viridis, norm=color.LogNorm(vmin=1.e-7))
 
-        right = axes[1].pcolormesh(
+        right = axePairRight.pcolormesh(
             temperatures, densities, maxIonizationToInitial,
             cmap=plt.cm.viridis, norm=color.LogNorm(vmin=1.e-2, vmax=1.e2))
 
-    figure.colorbar(left, ax = axes[0])
-    figure.colorbar(right, ax = axes[1])
+        figure.colorbar(left, ax = axePairLeft)
+        figure.colorbar(right, ax = axePairRight)
+
     figure.tight_layout()
-    plt.savefig(scanConfigs[0].figureStoragePath + "SummaryPlot_"
-                + scanConfig.dataSeriesName)
+
+    fileName = scanConfigs[0].figureStoragePath + "SummaryPlot"
+    for scanConfig in scanConfigs:
+        fileName = fileName + "_" + scanConfig.dataSeriesName
+    plt.savefig(fileName)
+
     plt.close(figure)
 
 
@@ -254,4 +256,10 @@ if __name__ == "__main__":
         additionalDataName = "",
         seriesName = "Cu Initial: 2+")
 
-    plotSummary([scanConfig_Cu], summaryConfig_Cu)
+    # create scan baseConfigs
+    baseConfigs, conditions, axisDict_conditions = scan.generateBaseConfigs(
+        scanConfig_Cu)
+
+    plotSummary([scanConfig_Cu],
+                [(baseConfigs, conditions, axisDict_conditions)],
+                summaryConfig_Cu)

@@ -123,7 +123,7 @@ def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPI
 @typeguard.typechecked
 def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 1):
     for scanConfig in tqdm(scans):
-        # create scan baseConfigsFalse
+        # create scan baseConfigs
         baseConfigs, conditions, axisDict_conditions = generateBaseConfigs(scanConfig)
 
         # optionally run SCFLY
@@ -144,11 +144,11 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig], chunkSize : int = 
             summary.plotSummary(
                 [scanConfig],
                 [(baseConfigs, conditions, axisDict_conditions)],
-                cfg.SummaryScanPlot.PlotConfig(
+                [cfg.SummaryScanPlot.PlotConfig(
                     loadRawEachSCLFYSim = False, # @todo change back, Brian Marre
                     loadRawSummaryData = True,
                     additionalDataName = "",
-                    seriesName = scanConfig.dataSeriesName))
+                    seriesName = scanConfig.dataSeriesName)])
 
         # save temperatures and ionDensities for reference
         np.savetxt(scanConfig.figureStoragePath + "electronTemperatures.txt", scanConfig.electronTemperatures)
