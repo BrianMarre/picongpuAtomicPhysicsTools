@@ -1,7 +1,7 @@
 import numpy as np
-import ConfigNumberConversion as conv
+import SCFlyTools.AtomicConfigNumberConversion as conv
 
-def readSCFLYNames(fileName, numLevels, Z):
+def readSCFLYNames(fileName, Z, numLevels):
     """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
 
     @attention states must be uniquely described by their shell occupation number vector!
@@ -34,12 +34,14 @@ def readSCFLYNames(fileName, numLevels, Z):
     for levelVector in conversionTable[ids]:
          configNumbers.append(conv.getConfigNumber(levelVector, Z))
 
-    result = dict(zip(conversionTable["state"], configNumbers))
+    SCFLYStateName_to_atomicConfigNumber = dict(zip(conversionTable["state"], configNumbers))
+    atomicConfigNumber_to_StateName = dict(zip(configNumbers, conversionTable["state"]))
 
     # add completely ionized state by hand
-    result[str(Z)+"+"] = 0
+    SCFLYStateName_to_atomicConfigNumber[str(Z)+"+"] = 0
 
-    return result
+    return SCFLYStateName_to_atomicConfigNumber, atomicConfigNumber_to_StateName
+
 
 def getSCFLY_Data(fileName, SCFLY_to_FLYonPIC):
     """load SCLFY main output file and extract population data
@@ -157,9 +159,8 @@ if __name__ == "__main__":
     SCFLY_output = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/xout"
     SCFLY_stateNames = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/atomicStateNaming.input"
 
-
-
     # load in state names
-    SCFLY_to_FLYonPIC = readSCFLYNames(SCFLY_stateNames, numLevels, Z)
+    SCFLY_to_FLYonPIC, temp= readSCFLYNames(SCFLY_stateNames, Z, numLevels)
+    del temp
     # get all unique BlockSizes
     atomicPopulationData, atomicConfigNumbers, timeData = getSCFLY_Data(SCFLY_output, SCFLY_to_FLYonPIC)

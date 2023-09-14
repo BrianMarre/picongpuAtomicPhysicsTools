@@ -1,0 +1,3 @@
+[submodule "ReadingOutputFromFLYonPIC_v2/SCFlyTools"]
+	path = ReadingOutputFromFLYonPIC_v2/SCFlyTools
+	url = git@github.com:ComputationalRadiationPhysics/SCFlyTools.git
