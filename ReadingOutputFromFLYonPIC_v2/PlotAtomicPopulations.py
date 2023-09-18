@@ -495,7 +495,7 @@ def plotSurplusByState(config : cfg.AtomicPopulationPlot.PlotConfig,
     Y, X = np.meshgrid(np.arange(0,numberAtomicStates), np.arange(0,numberTimeSteps))
 
     # prepare plot
-    figure = plt.figure(dpi=300, figsize=(20,30))
+    figure = plt.figure(dpi=200, figsize=(20,30))
     axes = figure.add_subplot(111)
     title = axes.set_title("Difference of relative abundances of atomic states FLYonPIC vs SCFLY: " + config.dataName)
     axes.set_xlabel("PIC step")
@@ -784,28 +784,37 @@ if __name__ == "__main__":
     # base paths to FLYonPIC simulation openPMD output
     basePath_30ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_30ppc/"
     basePath_60ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_60ppc/"
-    basePath_30ppc_Li = "/mnt/data1/marre55/testSCFLYComparison/openPMD_30ppc/"
+    basePath_30ppc_Li = "/mnt/data1/marre55/testSCFLYComparison/openPMD_30ppc_Li/"
+    basePath_30ppc_Cu = "/mnt/data1/marre55/testSCFLYComparison/openPMD_30ppc_Cu/"
 
     # fileName regexes
-    fileNames_30ppc_Ar = ["simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
-    fileNames_60ppc_Ar = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp",
+    fileNames_30ppc_Ar = ["simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp",
                           "simOutput_compare_4_%T.bp"]
+    fileNames_60ppc_Ar = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp",
+                          "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
     fileNames_30ppc_Li = ["simOutput_compare_1_%T.bp"]
+    fileNames_30ppc_Cu = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp",
+                          "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
 
     # FLYonPIC atomic states input data file
     FLYonPIC_atomicStates_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/AtomicStates_Ar.txt"
     FLYonPIC_atomicStates_Li = "/home/marre55/picInputs/testSCFlyComparison_Li/AtomicStates_Li.txt"
+    FLYonPIC_atomicStates_Cu = "/home/marre55/picInputs/testSCFlyComparison_Cu/AtomicStates_Cu.txt"
 
-    # SCFLY files
+    # SCFLY filesspeciesName_Cu
     SCFLY_output_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/xout"
     SCFLY_stateNames_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/atomicStateNaming.input"
 
     SCFLY_output_Li = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Li/xout"
     SCFLY_stateNames_Li = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Li/atomicStateNaming.input"
 
+    SCFLY_output_Cu = "/home/marre55/scflyInput/Cu_recombination_IPD_ScanZ_9_25_Temp_9_Density/xout"
+    SCFLY_stateNames_Cu = "/home/marre55/scflyInput/29_atomicStateNaming.input"
+
     # must be < numberStates in input data set
     numberStatesToPlot_Ar = 470
     numberStatesToPlot_Li = 48
+    numberStatesToPlot_Cu = 869
 
     atomicNumber_Ar = 18
     numLevels_Ar = 10
@@ -815,12 +824,19 @@ if __name__ == "__main__":
     numLevels_Li = 10
     speciesName_Li = "Li"
 
+    atomicNumber_Cu = 29
+    numLevels_Cu = 10
+    speciesName_Cu = "Cu"
+
     # colourmap
     colorMap_Ar = plt.cm.tab20b
     numColorsInColorMap_Ar = 20
 
     colorMap_Li = plt.cm.tab10
     numColorsInColorMap_Li = 10
+
+    colorMap_Cu = plt.cm.tab20b
+    numColorsInColorMap_Cu = 20
 
     config_FLYonPIC_30ppc_Ar = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
@@ -924,7 +940,28 @@ if __name__ == "__main__":
         dataName =                          "SCFLY_Li",
         loadRaw =                           True)
 
-    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li]#, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
-    tasks_diff = []#config_FLYonPIC_60ppc_SCFLY_Ar]
+    config_FLYonPIC_30ppc_SCFLY_Cu = cfg.AtomicPopulationPlot.PlotConfig(
+        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Cu,
+        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Cu,
+        FLYonPICOutputFileNames =           fileNames_30ppc_Cu,
+        FLYonPICBasePath =                  basePath_30ppc_Cu,
+        SCFLYOutputFileName =               SCFLY_output_Cu,
+        numberStatesToPlot =                numberStatesToPlot_Cu,
+        colorMap =                          colorMap_Cu,
+        numColorsInColorMap =               numColorsInColorMap_Cu,
+        speciesName =                       speciesName_Cu,
+        atomicNumber=                       atomicNumber_Cu,
+        numLevels =                         numLevels_Cu,
+        processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
+        dataName =                          "FLYonPIC_30ppc_SCFLY_Cu",
+        loadRaw =                           False)
+
+    tasks_general = []#config_FLYonPIC_30ppc_SCFLY_Cu]
+    #   config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar,
+    #   config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar,
+    #   config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_diff = [config_FLYonPIC_30ppc_SCFLY_Cu]
+    #   config_FLYonPIC_60ppc_SCFLY_Ar]
 
     plot_all(tasks_general, tasks_diff, [])

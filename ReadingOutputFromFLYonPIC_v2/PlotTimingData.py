@@ -3,7 +3,7 @@ import numpy as np
 import copy
 
 import Reader
-import Config
+import Config as cfg
 
 def plot(config):
     casesStepTimes = []
@@ -78,8 +78,13 @@ if __name__ == "__main__":
     basePath_Li = "/home/marre55/picInputs/testSCFlyComparison_Li/"
     files_Li = ["output_compare_30ppc_1.result"]
 
-    config_Argon = PlottingConfig.TimingDataPlot([basePath, basePath], [files_30ppc, files_60ppc], ["30ppc", "60ppc"], "TimingData_Ar")
-    config_Lithium = PlottingConfig.TimingDataPlot([basePath_Li], [files_Li], ["30ppc"], "TimingData_Li")
+    basePath_Cu = "/home/marre55/picInputs/testSCFlyComparison_Cu/"
+    files_Cu = ["output_compare_30ppc_1.result", "output_compare_30ppc_2.result", "output_compare_30ppc_3.result", "output_compare_30ppc_4.result"]
+
+    config_Argon = cfg.TimingDataPlot.TimingDataPlot([basePath, basePath], [files_30ppc, files_60ppc], ["30ppc", "60ppc"], "TimingData_Ar")
+    config_Lithium = cfg.TimingDataPlot.TimingDataPlot([basePath_Li], [files_Li], ["30ppc"], "TimingData_Li")
+    config_Copper = cfg.TimingDataPlot.TimingDataPlot([basePath_Cu], [files_Cu], ["30ppc"], "TimingData_Cu")
 
     plot(config_Argon)
     plot(config_Lithium)
+    plot(config_Copper)
