@@ -8,8 +8,8 @@ if __name__ == "__main__":
     processedDataStoragePath = "preProcessedData/"
     chunkSize = 24
 
-    previouslyRunInitialChargeStates = []
-    unRunInitialChargeStates = [2, 3, 4, 5, 6, 7, 8, 9]
+    previouslyRunInitialChargeStates = [2, 3, 4, 5, 6, 7, 8]
+    unRunInitialChargeStates = [9]
 
     # create scanConfigs
     scanConfigs = []

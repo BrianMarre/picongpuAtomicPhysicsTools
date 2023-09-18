@@ -905,7 +905,7 @@ if __name__ == "__main__":
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
         dataName =                          "FLYonPIC_30ppc_SCFLY_Li",
-        loadRaw =                           True)
+        loadRaw =                           False)
 
     config_SCFLY_Li = cfg.AtomicPopulationPlot.PlotConfig(
         FLYonPICAtomicStateInputDataFile =  "",
@@ -924,7 +924,7 @@ if __name__ == "__main__":
         dataName =                          "SCFLY_Li",
         loadRaw =                           True)
 
-    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
-    tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Li]#, config_SCFLY_Li, config_SCFLY_Ar, config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar, config_FLYonPIC_60ppc_SCFLY_Ar]
+    tasks_diff = []#config_FLYonPIC_60ppc_SCFLY_Ar]
 
     plot_all(tasks_general, tasks_diff, [])
