@@ -42,7 +42,7 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     sampleListTimeSteps = []
     for fileName in config.FLYonPICOutputFileNames:
         sampleAtomicPopulationData, sampleTimeSteps = Reader.openPMD.getAtomicPopulationData(
-            config.FLYonPICBasePath + fileName, config.speciesName)
+            config.FLYonPICBasePath + fileName, config.speciesName, collectionIndex_to_atomicConfigNumber)
         sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
         sampleListTimeSteps.append(sampleTimeSteps)
 
