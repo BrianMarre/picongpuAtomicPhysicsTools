@@ -83,8 +83,8 @@ if __name__ == "__main__":
 
     config_Argon = cfg.TimingDataPlot.TimingDataPlot([basePath, basePath], [files_30ppc, files_60ppc], ["30ppc", "60ppc"], "TimingData_Ar")
     config_Lithium = cfg.TimingDataPlot.TimingDataPlot([basePath_Li], [files_Li], ["30ppc"], "TimingData_Li")
-    config_Copper = cfg.TimingDataPlot.TimingDataPlot([basePath_Cu], [files_Cu], ["30ppc"], "TimingData_Cu")
+    config_Copper = cfg.TimingDataPlot.TimingDataPlot([basePath_Cu], [files_Cu], ["30ppc"], "TimingData_Cu_rerunStoreStateIndex")
 
-    plot(config_Argon)
+    #plot(config_Argon)
     plot(config_Lithium)
     plot(config_Copper)

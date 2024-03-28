@@ -42,7 +42,7 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     sampleListTimeSteps = []
     for fileName in config.FLYonPICOutputFileNames:
         sampleAtomicPopulationData, sampleTimeSteps = Reader.openPMD.getAtomicPopulationData(
-            config.FLYonPICBasePath + fileName, config.speciesName)
+            config.FLYonPICBasePath + fileName, config.speciesName, collectionIndex_to_atomicConfigNumber)
         sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
         sampleListTimeSteps.append(sampleTimeSteps)
 
@@ -954,10 +954,10 @@ if __name__ == "__main__":
         numLevels =                         numLevels_Cu,
         processedDataStoragePath =          "preProcessedData/",
         figureStoragePath =                 "",
-        dataName =                          "FLYonPIC_30ppc_SCFLY_Cu",
-        loadRaw =                           False)
+        dataName =                          "FLYonPIC_30ppc_SCFLY_Cu_rerunStoreStateIndex",
+        loadRaw =                           True)
 
-    tasks_general = []#config_FLYonPIC_30ppc_SCFLY_Cu]
+    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Cu]
     #   config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar,
     #   config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar,
     #   config_FLYonPIC_60ppc_SCFLY_Ar]

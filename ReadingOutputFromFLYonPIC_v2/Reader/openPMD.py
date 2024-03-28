@@ -1,15 +1,17 @@
 import openpmd_api as io
 import numpy as np
 import math
+import typeguard
 from tqdm import tqdm
 
-def getAtomicPopulationData(filename, speciesName):
+@typeguard.typechecked
+def getAtomicPopulationData(filename : str, speciesName : str, collectionIndex_to_atomicConfigNumber : dict[int, int]):
     """ returns the atomic state data of an openPMD particle output of a simulation
 
         Paramters:
             filename(string-like) ... filenames of data input
             speciesName(string-like) ... string identifier of species
-            atomicNumber(uint < 128) ... atomic Number of Ion-Species
+            collectionIndex_to_atomicConfigNumber .. dictionary[collectionIndex:atomicConfigNumber] as in FYLonPIC input
 
         return value: list of dictionaries, each entry of the list corresponds to one
             iteration and each dictionary contains all occupied states and their
@@ -44,11 +46,11 @@ def getAtomicPopulationData(filename, speciesName):
         listTimeSteps.append(step.get_attribute("time") * step.get_attribute("timeUnitSI"))
 
         # define data to be requested later
-        atomicConfigNumber = species["atomicConfigNumber"][io.Mesh_Record_Component.SCALAR]
+        atomicStateCollectionIndex = species["atomicStateCollectionIndex"][io.Mesh_Record_Component.SCALAR]
         weighting = species["weighting"][io.Mesh_Record_Component.SCALAR]
 
         # mark to be loaded
-        dataAtomicConfigNumber = atomicConfigNumber.load_chunk()
+        dataAtomicStateCollectionIndex = atomicStateCollectionIndex.load_chunk()
         dataWeightings = weighting.load_chunk()
 
         # load data
@@ -58,8 +60,8 @@ def getAtomicPopulationData(filename, speciesName):
         states = {}
 
         # for all macro particles, @todo parallelise in lockstep variety
-        for j in range(0,np.shape(dataAtomicConfigNumber)[0]):
-            atomicConfigNumber = dataAtomicConfigNumber[j]
+        for j in range(0,np.shape(dataAtomicStateCollectionIndex)[0]):
+            atomicConfigNumber = collectionIndex_to_atomicConfigNumber[dataAtomicStateCollectionIndex[j]]
 
             # search in dictionary
             weighting = states.get(atomicConfigNumber)
