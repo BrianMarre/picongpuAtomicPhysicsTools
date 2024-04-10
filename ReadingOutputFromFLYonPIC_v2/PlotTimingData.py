@@ -5,7 +5,10 @@ import copy
 import Reader
 import Config as cfg
 
-def plot(config):
+import typeguard
+
+@typeguard.typechecked
+def plot(config : cfg.TimingDataPlot.TimingDataPlot):
     casesStepTimes = []
     for i, basePath in enumerate(config.caseBasePaths):
         sampleStepTimes = []
@@ -14,55 +17,84 @@ def plot(config):
             sampleStepTimes.append(timingData)
         casesStepTimes.append(sampleStepTimes)
 
+
     figure, (axes_timeTotal, axes_timeSteps) = plt.subplots(2,1, dpi=200, layout="constrained")
     title = plt.suptitle("FLYonPIC Timing Data")
 
+    # plot total run time
     maxStep = 0
+    minStep = 0
     maxTime = 0
     for i, sampleStepTimes in enumerate(casesStepTimes):
         for sampleIdx, timingData in enumerate(sampleStepTimes):
-            axes_timeTotal.plot(timingData['step'], timingData['time_total[msec]'] / 1000 / 60, ".-", label=(config.caseDataNames[i] + ", "+ str(sampleIdx)))
+            if not config.plotCleanUpAndInit:
+                timingData = timingData[1:-1]
+
+            axes_timeTotal.plot(
+                timingData['step'],
+                timingData['time_total[msec]'] / 1000 / 60,
+                ".-",
+                label=(config.caseDataNames[i] + ", "+ str(sampleIdx)))
+
             maxStep = max(maxStep, np.max(timingData['step']))
+            minStep = min(minStep, np.min(timingData['step']))
             maxTime = max(maxTime, np.max(timingData['time_total[msec]'] / 1000 / 60))
 
     axes_timeTotal.set_xlabel("PIC step")
     axes_timeTotal.set_ylabel("total time [min]")
     axes_timeTotal.set_ylim(bottom=0)
-    xticks = list(range(-1, maxStep+1, int(np.ceil(maxStep / 10))))
-    xticks[0] = -1
+
+    xticks = list(range(minStep, maxStep+1, int(np.ceil(maxStep / 10))))
+    xticks[0] = minStep
     xticks[-1] = maxStep
+
     labels = copy.copy(xticks)
-    labels[0] = "init"
-    labels[-1] = "cleanup"
+
+    if config.plotCleanUpAndInit:
+        # set special labels for init cleanup
+        labels[0] = "init"
+        labels[-1] = "cleanup"
+
     axes_timeTotal.set_xticks(xticks, labels)
-    yticks = list(range(0, int(maxTime), int(np.ceil(maxTime / 12))))
-    yticks.append(maxTime)
+    yticks = np.linspace(0., maxTime, num=12)
     axes_timeTotal.set_yticks(yticks)
 
     handles, labels = axes_timeTotal.get_legend_handles_labels()
     lgd_timeTotal= axes_timeTotal.legend(handles, labels, loc='upper right', bbox_to_anchor=(1.21, 1.05), fontsize='small')
 
+    # plot per step calculation time
     maxStep = 0
+    minStep = 0
     maxTime = 0
     for i, sampleStepTimes in enumerate(casesStepTimes):
         for sampleIdx, timingData in enumerate(sampleStepTimes):
-            axes_timeSteps.plot(timingData['step'], timingData['time_step[msec]'] / 1000, ".-", label=(config.caseDataNames[i] + ", " + str(sampleIdx)))
+            if not config.plotCleanUpAndInit:
+                timingData = timingData[1:-1]
+
+            axes_timeSteps.plot(
+                timingData['step'],
+                timingData['time_step[msec]'] / 1000,
+                ".-",
+                label=(config.caseDataNames[i] + ", " + str(sampleIdx)))
             maxStep = max(maxStep, np.max(timingData['step']))
+            minStep = min(minStep, np.min(timingData['step']))
             maxTime = max(maxTime, np.max(timingData['time_step[msec]'] / 1000))
 
     axes_timeSteps.set_xlabel("PIC step")
-    axes_timeSteps.set_ylabel("step time [s]")
+    axes_timeSteps.set_ylabel("step calculation time [s]")
     axes_timeSteps.set_ylim(bottom=0)
 
-    xticks = list(range(-1, maxStep+1, int(np.ceil(maxStep / 10))))
-    xticks[0] = -1
+    xticks = list(range(minStep, maxStep+1, int(np.ceil(maxStep / 10))))
+    xticks[0] = minStep
     xticks[-1] = maxStep
     labels = copy.copy(xticks)
-    labels[0] = "init"
-    labels[-1] = "cleanup"
+
+    if config.plotCleanUpAndInit:
+        labels[0] = "init"
+        labels[-1] = "cleanup"
+
     axes_timeSteps.set_xticks(xticks, labels)
-    yticks = list(range(0, int(maxTime), int(np.ceil(maxTime / 13))))
-    yticks[-1] = maxTime
+    yticks = np.linspace(0., maxTime, num=13)
     axes_timeSteps.set_yticks(yticks)
 
     handles, labels = axes_timeSteps.get_legend_handles_labels()
@@ -71,20 +103,9 @@ def plot(config):
     plt.savefig(config.fileName, bbox_extra_artists=(lgd_timeSteps,lgd_timeTotal, title), bbox_inches='tight')
 
 if __name__ == "__main__":
-    basePath = "/home/marre55/picInputs/testSCFlyComparison_Ar/"
-    files_30ppc = ["output_compare_30ppc_2.result", "output_compare_30ppc_3.result", "output_compare_30ppc_4.result"]
-    files_60ppc = ["output_compare_60ppc_1.result", "output_compare_60ppc_2.result", "output_compare_60ppc_3.result", "output_compare_60ppc_4.result"]
-
-    basePath_Li = "/home/marre55/picInputs/testSCFlyComparison_Li/"
-    files_Li = ["output_compare_30ppc_1.result"]
-
-    basePath_Cu = "/home/marre55/picInputs/testSCFlyComparison_Cu/"
+    basePath_Cu = "/home/marre55/picInputs/scflyComparison_Cu/"
     files_Cu = ["output_compare_30ppc_1.result", "output_compare_30ppc_2.result", "output_compare_30ppc_3.result", "output_compare_30ppc_4.result"]
 
-    config_Argon = cfg.TimingDataPlot.TimingDataPlot([basePath, basePath], [files_30ppc, files_60ppc], ["30ppc", "60ppc"], "TimingData_Ar")
-    config_Lithium = cfg.TimingDataPlot.TimingDataPlot([basePath_Li], [files_Li], ["30ppc"], "TimingData_Li")
-    config_Copper = cfg.TimingDataPlot.TimingDataPlot([basePath_Cu], [files_Cu], ["30ppc"], "TimingData_Cu_rerunStoreStateIndex")
+    config_Copper = cfg.TimingDataPlot.TimingDataPlot([basePath_Cu], [files_Cu], ["60ppc"], "TimingData_Cu_PressureIonization_IPD_60ppc_alpha_01", False)
 
-    #plot(config_Argon)
-    plot(config_Lithium)
     plot(config_Copper)

@@ -1,9 +1,14 @@
 import numpy as np
 
-def readTimingData(fileName):
+import typeguard
+
+@typeguard.typechecked
+def readTimingData(fileName : str):
     """
-    @return initTime [msec], timeData
+    @returns np.array[numbertimeSteps+2, ('step', 'i4'), ('time_total[msec]', 'u8'), ('time_step[msec]', 'u8')] =
+        [initTime [msec], calculation time for every time step 0 [msec], ... , cleanUpTime [msec]]
     """
+
     # time steps and calculation runtime
     regex_timeStep = r"\s{0,2}\d+ % =\s+(\d+) \| time elapsed:\s*(\d+h)?\s*(\d+min)?\s*(\d+sec)?\s+(\d+msec) \| avg time per step:\s*(\d+h)?\s*(\d+min)?\s*(\d+sec)?\s+(\d+msec)\n"
     result_template_timeStep = [('step', 'u4'), ('total_h', 'U10'), ('total_min', 'U10'), ('total_sec', 'U10'), ('total_msec', 'U10'), ('step_h', 'U10'), ('step_min', 'U10'), ('step_sec', 'U10'), ('step_msec', 'U10')]
@@ -52,7 +57,7 @@ def readTimingData(fileName):
 
     del output
 
-    ## store as first entry
+    ## store init time as first entry
     result[0][0] = -1
     result[0][1] = 0
     result[0][2] = initTime
@@ -73,8 +78,10 @@ def readTimingData(fileName):
                                 + (0 if output[0][2] == '' else int(output[0][2])) * 1000
                                 + (0 if output[0][3] == '' else int(output[0][3]))) # millisecond
     except IndexError:
+        # if not in file set to last time step
         fullSimulationTime = result[-2][1]
 
+    ## calculate and store cleanup time as last entry
     result[-1][0] = numberSteps + 1
     result[-1][1] = fullSimulationTime
     result[-1][2] = fullSimulationTime - result['time_total[msec]'][-2]

@@ -44,15 +44,19 @@ class BoundFreeTransitions:
 
             @return unit: 1e6b
         """
+
         energyDifference = ionizationEnergy + excitationEnergyDifference
         U = energyElectron/energyDifference
         combinatorialFactor = BoundFreeTransitions._multiplicity(lowerStateLevelVector, upperStateLevelVector)
 
         # m^2 * (eV/(eV))^2 * 1/(eV/eV) * unitless * unitless / (m^2/1e6b) = 1e6b
-        return (np.pi * const.value("Bohr radius")**2 * 2.3 * combinatorialFactor
-            * (const.value("Rydberg constant times hc in eV")/energyDifference)**2
-            * 1./U
-            * np.log(U) * BoundFreeTransitions._wFactor(U, screenedCharge)) / 1e-22 # 1e6b, 1e-22 m^2
+        if U > 1:
+            return (np.pi * const.value("Bohr radius")**2 * 2.3 * combinatorialFactor
+                * (const.value("Rydberg constant times hc in eV")/energyDifference)**2
+                * 1./U
+                * np.log(U) * BoundFreeTransitions._wFactor(U, screenedCharge)) / 1e-22 # 1e6b, 1e-22 m^2
+        else:
+            return 0.
 
     @staticmethod
     def rateCollisionalIonization(
