@@ -792,7 +792,8 @@ if __name__ == "__main__":
     FLYonPIC_atomicStates_Cu = "/home/marre55/picInputs/scflyComparison_Cu/AtomicStates_Cu.txt"
 
     # SCFLY filesspeciesName_Cu
-    SCFLY_output_Cu = "/home/marre55/scflyInput/Cu_recombination_IPD_ScanZ_9_25_Temp_9_Density/xout"
+    SCFLY_output_Cu_9 = "/home/marre55/scflyInput/Cu_recombination_IPD_ScanZ_9_25_Temp_9_Density/xout"
+    SCFLY_output_Cu_2_1keV = "/home/marre55/scflyInput/Cu_recombination_IPD_ScanZ_2_9_Temp_10_Density/xout"
     SCFLY_stateNames_Cu = "/home/marre55/scflyInput/29_atomicStateNaming.input"
 
     # must be <= numberStates in input data set
@@ -811,7 +812,7 @@ if __name__ == "__main__":
         SCFLYatomicStateNamingFile =        SCFLY_stateNames_Cu,
         FLYonPICOutputFileNames =           fileNames_30ppc_Cu,
         FLYonPICBasePath =                  basePath_30ppc_Cu,
-        SCFLYOutputFileName =               SCFLY_output_Cu,
+        SCFLYOutputFileName =               SCFLY_output_Cu_9,
         numberStatesToPlot =                numberStatesToPlot_Cu,
         colorMap =                          colorMap_Cu,
         numColorsInColorMap =               numColorsInColorMap_Cu,
@@ -823,7 +824,24 @@ if __name__ == "__main__":
         dataName =                          "FLYonPIC_30ppc_SCFLY_Cu_PressureIonization_IPD_60ppc_alpha_01",
         loadRaw =                           True)
 
-    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Cu]
-    tasks_diff = [config_FLYonPIC_30ppc_SCFLY_Cu]
+    config_FLYonPIC_60ppc_SCFLY_Cu_IPD_TestCase = cfg.AtomicPopulationPlot.PlotConfig(
+        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Cu,
+        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Cu,
+        FLYonPICOutputFileNames =           fileNames_30ppc_Cu,
+        FLYonPICBasePath =                  basePath_30ppc_Cu,
+        SCFLYOutputFileName =               SCFLY_output_Cu_2,
+        numberStatesToPlot =                numberStatesToPlot_Cu,
+        colorMap =                          colorMap_Cu,
+        numColorsInColorMap =               numColorsInColorMap_Cu,
+        speciesName =                       speciesName_Cu,
+        atomicNumber=                       atomicNumber_Cu,
+        numLevels =                         numLevels_Cu,
+        processedDataStoragePath =          "preProcessedData/",
+        figureStoragePath =                 "",
+        dataName =                          "FLYonPIC_60ppc_alpha_01_SCFLY_Cu_IPDInIonization",
+        loadRaw =                           True)
+
+    tasks_general = [config_FLYonPIC_60ppc_SCFLY_Cu_IPD_TestCase]
+    tasks_diff = [config_FLYonPIC_60ppc_SCFLY_Cu_IPD_TestCase]
 
     plot_all(tasks_general, tasks_diff, [])

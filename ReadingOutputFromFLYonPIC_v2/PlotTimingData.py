@@ -106,6 +106,12 @@ if __name__ == "__main__":
     basePath_Cu = "/home/marre55/picInputs/scflyComparison_Cu/"
     files_Cu = ["output_compare_30ppc_1.result", "output_compare_30ppc_2.result", "output_compare_30ppc_3.result", "output_compare_30ppc_4.result"]
 
-    config_Copper = cfg.TimingDataPlot.TimingDataPlot([basePath_Cu], [files_Cu], ["60ppc"], "TimingData_Cu_PressureIonization_IPD_60ppc_alpha_01", False)
+    config_Copper = cfg.TimingDataPlot.TimingDataPlot(
+        [basePath_Cu],
+        [files_Cu],
+        ["60ppc"],
+        "TimingData_Cu_PressureIonization_IPD_60ppc_alpha_01",
+        # plot init and finalize time
+        False)
 
     plot(config_Copper)
