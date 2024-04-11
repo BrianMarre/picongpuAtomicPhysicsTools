@@ -34,14 +34,6 @@ def getAtomicPopulationData(filename : str, speciesName : str, collectionIndex_t
     # open a series of adios [.bp] files, in read only mode
     series = io.Series(filename, io.Access.read_only)
 
-    #particle data available output, debug code
-    #step = series.iterations[0]
-    #for particleSpecies in step.particles:
-    #    print("\t {0}".format(particleSpecies))
-    #    print("With records:")
-    #    for record in step.particles[particleSpecies]:
-    #        print("\t {0}".format(record))
-
     listIterationData = []
     listTimeSteps = []
 
@@ -54,7 +46,9 @@ def getAtomicPopulationData(filename : str, speciesName : str, collectionIndex_t
         # get one specific species from all species of particles
         species = step.particles[speciesName]
 
-        listTimeSteps.append(step.get_attribute("time") * step.get_attribute("timeUnitSI"))
+        print(species.particle_patches["numParticles"])
+
+        #listTimeSteps.append(step.get_attribute("time") * step.get_attribute("timeUnitSI"))
 
         # define data to be requested later
         atomicStateCollectionIndex = species["atomicStateCollectionIndex"][io.Mesh_Record_Component.SCALAR]
