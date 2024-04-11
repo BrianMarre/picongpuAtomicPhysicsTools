@@ -1,13 +1,24 @@
+"""
+This file is part of the FLYonPIC_Eval.
+Copyright 2024 PIConGPU contributors
+
+Distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Authors: Brian Edward Marre
+License: GPLv3+
+"""
+
 import typeguard
 
 import json
 from tqdm import tqdm
 import numpy as np
 
-import PlotAtomicPopulations
-import ScanSCFLY as scan
-import SCFlyTools
-import Config as cfg
+from . import PlotAtomicPopulations
+from . import ScanSCFLY as scan
+from . import SCFlyTools
+from . import Config as cfg
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
@@ -15,7 +26,7 @@ import matplotlib.scale as scale
 
 @typeguard.typechecked
 def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
-                    summaryConfig : cfg.SummaryScanPlot.PlotConfig,
+                    summaryConfig : cfg.SummarySCFLYScanPlot.PlotConfig,
                     tasks : tuple[
                     list[SCFlyTools.BaseConfig.BaseConfig],
                     list[tuple[int,int]],
@@ -96,7 +107,7 @@ def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
 
 @typeguard.typechecked
 def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
-                 summaryConfig : cfg.SummaryScanPlot.PlotConfig,
+                 summaryConfig : cfg.SummarySCFLYScanPlot.PlotConfig,
                  tasks : tuple[
                     list[SCFlyTools.BaseConfig.BaseConfig],
                     list[tuple[int,int]],
@@ -141,7 +152,7 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
                     list[SCFlyTools.BaseConfig.BaseConfig],
                     list[tuple[int,int]],
                     dict[str, int]]],
-                summaryConfigList : list[cfg.SummaryScanPlot.PlotConfig]):
+                summaryConfigList : list[cfg.SummarySCFLYScanPlot.PlotConfig]):
     """plot summary plot for each scanConfig into combined figure"""
 
     # check for consistent storage paths
@@ -219,41 +230,3 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
     plt.savefig(fileName)
 
     plt.close(figure)
-
-
-if __name__ == "__main__":
-    processedDataStoragePath = "preProcessedData/"
-
-    scanConfig_Cu = cfg.SCFLYScan.ScanConfig(
-        atomicNumber = 29,
-        SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/29_atomicStateNaming.input",
-        atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.29",
-        electronTemperatures = np.concatenate([np.arange(1,10)*1e2, (np.arange(10)+1)*1e3]), # eV
-        ionDensities = np.concatenate([np.arange(1,10)*1e21, (np.arange(10)+1)*1e22]), # 1/cm^3
-        timePoints = np.arange(101) * 3.3e-17, # s
-        initialStateLevelVector = (2, 8, 17, 0, 0, 0, 0, 0, 0, 0),
-        outputBasePath = "/home/marre55/scflyInput/",
-        SCFLYBinaryPath = "/home/marre55/scfly/code/exe/scfly",
-        outputFileName = "xout",
-        dataSeriesName ="Cu_recombination_IPD",
-        numberStatesToPlot = 870,
-        colorMap = plt.cm.tab20b,
-        numColorsInColorMap = 20,
-        processedDataStoragePath = processedDataStoragePath,
-        figureStoragePath = "SCFLY_Cu_Recombination_IPD_ScanImages/",
-        runSCFLY = False,
-        plotEachSim = False,
-        plotSummary = True)
-
-    summaryConfig_Cu = cfg.SummaryScanPlot.PlotConfig(
-        loadRawEachSCLFYSim = False,
-        loadRawSummaryData = True,
-        dataSetName = "Cu Initial: 2+")
-
-    # create scan baseConfigs
-    baseConfigs, conditions, axisDict_conditions = scan.generateBaseConfigs(
-        scanConfig_Cu)
-
-    plotSummary([scanConfig_Cu],
-                [(baseConfigs, conditions, axisDict_conditions)],
-                summaryConfig_Cu)

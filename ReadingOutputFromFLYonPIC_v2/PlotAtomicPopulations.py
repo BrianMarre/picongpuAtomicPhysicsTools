@@ -1,3 +1,14 @@
+"""
+This file is part of the FLYonPIC_Eval.
+Copyright 2024 PIConGPU contributors
+
+Distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Authors: Brian Edward Marre
+License: GPLv3+
+"""
+
 import typeguard
 
 import numpy as np
@@ -5,10 +16,10 @@ import math
 import json
 from tqdm import tqdm
 
-import Reader
-import SCFlyTools.AtomicConfigNumberConversion as conv
-import Config as cfg
-import ChargeStateColors
+from . import Reader
+from .SCFlyTools import AtomicConfigNumberConversion as conv
+from . import Config as cfg
+from . import ChargeStateColors
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
@@ -730,7 +741,12 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
 
 
 @typeguard.typechecked
-def plot_all(tasks_general : list[cfg.AtomicPopulationPlot.PlotConfig], tasks_diff : list[cfg.AtomicPopulationPlot.PlotConfig], tasks_recombination : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPICInitialChargeState : int = 0):
+def plot_all(
+    tasks_general : list[cfg.AtomicPopulationPlot.PlotConfig],
+    tasks_diff : list[cfg.AtomicPopulationPlot.PlotConfig],
+    tasks_recombination : list[cfg.AtomicPopulationPlot.PlotConfig],
+    FLYonPICInitialChargeState : int = 0):
+
     # plot additive and absolute for atomic states and absolute for charge states
     for config in tasks_general:
         print(config.dataName)
@@ -779,189 +795,3 @@ def plot_all(tasks_general : list[cfg.AtomicPopulationPlot.PlotConfig], tasks_di
 
         plotRecombinationImportance(config, FLYonPICInitialChargeState, atomicPopulationData,
                                     axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
-
-if __name__ == "__main__":
-    # base paths to FLYonPIC simulation openPMD output
-    basePath_30ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_30ppc/"
-    basePath_60ppc_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/openPMD_60ppc/"
-    basePath_30ppc_Li = "/mnt/data1/marre55/testSCFLYComparison/openPMD_30ppc_Li/"
-    basePath_30ppc_Cu = "/mnt/data1/marre55/testSCFLYComparison/openPMD_30ppc_Cu/"
-
-    # fileName regexes
-    fileNames_30ppc_Ar = ["simOutput_compare_2_%T.bp", "simOutput_compare_3_%T.bp",
-                          "simOutput_compare_4_%T.bp"]
-    fileNames_60ppc_Ar = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp",
-                          "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
-    fileNames_30ppc_Li = ["simOutput_compare_1_%T.bp"]
-    fileNames_30ppc_Cu = ["simOutput_compare_1_%T.bp", "simOutput_compare_2_%T.bp",
-                          "simOutput_compare_3_%T.bp", "simOutput_compare_4_%T.bp"]
-
-    # FLYonPIC atomic states input data file
-    FLYonPIC_atomicStates_Ar = "/home/marre55/picInputs/testSCFlyComparison_Ar/AtomicStates_Ar.txt"
-    FLYonPIC_atomicStates_Li = "/home/marre55/picInputs/testSCFlyComparison_Li/AtomicStates_Li.txt"
-    FLYonPIC_atomicStates_Cu = "/home/marre55/picInputs/testSCFlyComparison_Cu/AtomicStates_Cu.txt"
-
-    # SCFLY filesspeciesName_Cu
-    SCFLY_output_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/xout"
-    SCFLY_stateNames_Ar = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Ar/atomicStateNaming.input"
-
-    SCFLY_output_Li = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Li/xout"
-    SCFLY_stateNames_Li = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC_Li/atomicStateNaming.input"
-
-    SCFLY_output_Cu = "/home/marre55/scflyInput/Cu_recombination_IPD_ScanZ_9_25_Temp_9_Density/xout"
-    SCFLY_stateNames_Cu = "/home/marre55/scflyInput/29_atomicStateNaming.input"
-
-    # must be < numberStates in input data set
-    numberStatesToPlot_Ar = 470
-    numberStatesToPlot_Li = 48
-    numberStatesToPlot_Cu = 869
-
-    atomicNumber_Ar = 18
-    numLevels_Ar = 10
-    speciesName_Ar = "Ar"
-
-    atomicNumber_Li = 3
-    numLevels_Li = 10
-    speciesName_Li = "Li"
-
-    atomicNumber_Cu = 29
-    numLevels_Cu = 10
-    speciesName_Cu = "Cu"
-
-    # colourmap
-    colorMap_Ar = plt.cm.tab20b
-    numColorsInColorMap_Ar = 20
-
-    colorMap_Li = plt.cm.tab10
-    numColorsInColorMap_Li = 10
-
-    colorMap_Cu = plt.cm.tab20b
-    numColorsInColorMap_Cu = 20
-
-    config_FLYonPIC_30ppc_Ar = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
-        SCFLYatomicStateNamingFile =        "",
-        FLYonPICOutputFileNames =           fileNames_30ppc_Ar,
-        FLYonPICBasePath =                  basePath_30ppc_Ar,
-        SCFLYOutputFileName =               "",
-        numberStatesToPlot =                numberStatesToPlot_Ar,
-        colorMap =                          colorMap_Ar,
-        numColorsInColorMap =               numColorsInColorMap_Ar,
-        speciesName =                       speciesName_Ar,
-        atomicNumber=                       atomicNumber_Ar,
-        numLevels =                         numLevels_Ar,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "FLYonPIC_30ppc_Ar",
-        loadRaw =                           True)
-
-    config_FLYonPIC_60ppc_Ar = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
-        SCFLYatomicStateNamingFile =        "",
-        FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
-        FLYonPICBasePath =                  basePath_60ppc_Ar,
-        SCFLYOutputFileName =               "",
-        numberStatesToPlot =                numberStatesToPlot_Ar,
-        colorMap =                          colorMap_Ar,
-        numColorsInColorMap =               numColorsInColorMap_Ar,
-        speciesName =                       speciesName_Ar,
-        atomicNumber=                       atomicNumber_Ar,
-        numLevels =                         numLevels_Ar,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "FLYonPIC_60ppc_Ar",
-        loadRaw =                           True)
-
-    config_FLYonPIC_60ppc_SCFLY_Ar = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Ar,
-        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
-        FLYonPICOutputFileNames =           fileNames_60ppc_Ar,
-        FLYonPICBasePath =                  basePath_60ppc_Ar,
-        SCFLYOutputFileName =               SCFLY_output_Ar,
-        numberStatesToPlot =                numberStatesToPlot_Ar,
-        colorMap =                          colorMap_Ar,
-        numColorsInColorMap =               numColorsInColorMap_Ar,
-        speciesName =                       speciesName_Ar,
-        atomicNumber=                       atomicNumber_Ar,
-        numLevels =                         numLevels_Ar,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "FLYonPIC_60ppc_SCFLY_Ar",
-        loadRaw =                           True)
-
-    config_SCFLY_Ar = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  "",
-        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Ar,
-        FLYonPICOutputFileNames =           [],
-        FLYonPICBasePath =                  "",
-        SCFLYOutputFileName =               SCFLY_output_Ar,
-        numberStatesToPlot =                numberStatesToPlot_Ar,
-        colorMap =                          colorMap_Ar,
-        numColorsInColorMap =               numColorsInColorMap_Ar,
-        speciesName =                       speciesName_Ar,
-        atomicNumber=                       atomicNumber_Ar,
-        numLevels =                         numLevels_Ar,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "SCFLY_Ar",
-        loadRaw =                           True)
-
-    config_FLYonPIC_30ppc_SCFLY_Li = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Li,
-        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
-        FLYonPICOutputFileNames =           fileNames_30ppc_Li,
-        FLYonPICBasePath =                  basePath_30ppc_Li,
-        SCFLYOutputFileName =               SCFLY_output_Li,
-        numberStatesToPlot =                numberStatesToPlot_Li,
-        colorMap =                          colorMap_Li,
-        numColorsInColorMap =               numColorsInColorMap_Li,
-        speciesName =                       speciesName_Li,
-        atomicNumber=                       atomicNumber_Li,
-        numLevels =                         numLevels_Li,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "FLYonPIC_30ppc_SCFLY_Li",
-        loadRaw =                           False)
-
-    config_SCFLY_Li = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  "",
-        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Li,
-        FLYonPICOutputFileNames =           [],
-        FLYonPICBasePath =                  "",
-        SCFLYOutputFileName =               SCFLY_output_Li,
-        numberStatesToPlot =                numberStatesToPlot_Li,
-        colorMap =                          colorMap_Li,
-        numColorsInColorMap =               numColorsInColorMap_Li,
-        speciesName =                       speciesName_Li,
-        atomicNumber=                       atomicNumber_Li,
-        numLevels =                         numLevels_Li,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "SCFLY_Li",
-        loadRaw =                           True)
-
-    config_FLYonPIC_30ppc_SCFLY_Cu = cfg.AtomicPopulationPlot.PlotConfig(
-        FLYonPICAtomicStateInputDataFile =  FLYonPIC_atomicStates_Cu,
-        SCFLYatomicStateNamingFile =        SCFLY_stateNames_Cu,
-        FLYonPICOutputFileNames =           fileNames_30ppc_Cu,
-        FLYonPICBasePath =                  basePath_30ppc_Cu,
-        SCFLYOutputFileName =               SCFLY_output_Cu,
-        numberStatesToPlot =                numberStatesToPlot_Cu,
-        colorMap =                          colorMap_Cu,
-        numColorsInColorMap =               numColorsInColorMap_Cu,
-        speciesName =                       speciesName_Cu,
-        atomicNumber=                       atomicNumber_Cu,
-        numLevels =                         numLevels_Cu,
-        processedDataStoragePath =          "preProcessedData/",
-        figureStoragePath =                 "",
-        dataName =                          "FLYonPIC_30ppc_SCFLY_Cu_rerunStoreStateIndex",
-        loadRaw =                           True)
-
-    tasks_general = [config_FLYonPIC_30ppc_SCFLY_Cu]
-    #   config_FLYonPIC_30ppc_SCFLY_Li, config_SCFLY_Li, config_SCFLY_Ar,
-    #   config_FLYonPIC_30ppc_Ar, config_FLYonPIC_60ppc_Ar,
-    #   config_FLYonPIC_60ppc_SCFLY_Ar]
-    tasks_diff = [config_FLYonPIC_30ppc_SCFLY_Cu]
-    #   config_FLYonPIC_60ppc_SCFLY_Ar]
-
-    plot_all(tasks_general, tasks_diff, [])

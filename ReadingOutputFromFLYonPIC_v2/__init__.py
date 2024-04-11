@@ -1,32 +1,42 @@
-# helpers
-from . import ChargeStateColors
+"""
+This file is part of the FLYonPIC_Eval.
+Copyright 2024 PIConGPU contributors
 
-# file readers
-from . import Reader
+Distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-# generating SCFLY setups
-from . import SCFlyTools
+Authors: Brian Edward Marre
+License: GPLv3+
+"""
 
 # configs for plotting
 from . import Config
 
-#plotting libraries
-from . import PlotAtomicPopulationData
-from . import PlotTimingData
-from . import PlotSummaryScan
+# generating SCFLY setups
+from . import SCFlyTools
+
+# file readers
+from . import Reader
+
+# helpers
+from . import ChargeStateColors
 
 # scan with SCFLY
 from . import ScanSCFLY
-from . import ScanInitialState
+
+#plotting libraries
+from . import PlotAtomicPopulations
+from . import PlotTimingData
+from . import PlotSummarySCFLYScan
 
 __all__ = [
-    "ChargeStateColors",
-    "Reader",
-    "SCFlyTools",
     "Config",
+    "SCFlyTools",
+    "Reader",
+    "ChargeStateColors",
     "ScanSCFLY",
     "ScanInitialState",
-    "PlotAtomicPopulationData",
+    "PlotAtomicPopulations",
     "PlotTimingData",
-    "PlotSummaryScan"]
+    "PlotSummarySCFLYScan"]
 

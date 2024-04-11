@@ -1,3 +1,14 @@
+"""
+This file is part of the FLYonPIC_Eval.
+Copyright 2024 PIConGPU contributors
+
+Distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+Authors: Brian Edward Marre
+License: GPLv3+
+"""
+
 import pydantic
 import typeguard
 import typing
@@ -8,10 +19,10 @@ import numpy as np
 from tqdm import tqdm
 import subprocess
 
-import SCFlyTools
-import PlotAtomicPopulations as plotter
-import PlotSummaryScan as summary
-import Config as cfg
+from . import SCFlyTools
+from . import PlotAtomicPopulations as plotter
+from . import PlotSummarySCFLYScan as summary
+from . import Config as cfg
 
 
 @typeguard.typechecked
@@ -124,7 +135,7 @@ def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPI
 def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
                 chunkSize : int = 1,
                 plotCombined : bool = False,
-                summaryPlotConfigs : list[cfg.SummaryScanPlot.PlotConfig] = None):
+                summaryPlotConfigs : list[cfg.SummarySCFLYScanPlot.PlotConfig] = None):
 
     tasksList = []
     generatedSummaryPlotConfigs = []
@@ -152,7 +163,7 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
             summary.plotSummary(
                 [scanConfig],
                 [(baseConfigs, conditions, axisDict_conditions)],
-                [cfg.SummaryScanPlot.PlotConfig(
+                [cfg.SummarySCFLYScanPlot.PlotConfig(
                     loadRawEachSCLFYSim = True,
                     loadRawSummaryData = True,
                     dataSetName = scanConfig.dataSeriesName)])
@@ -160,7 +171,7 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
             tasksList.append((baseConfigs, conditions, axisDict_conditions))
             if summaryPlotConfigs is None:
                 generatedSummaryPlotConfigs.append(
-                    cfg.SummaryScanPlot.PlotConfig(
+                    cfg.SummarySCFLYScanPlot.PlotConfig(
                         loadRawEachSCLFYSim = True,
                         loadRawSummaryData = True,
                         dataSetName = scanConfig.dataSeriesName))
@@ -185,75 +196,3 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
             scanConfigs,
             tasksList,
             summaryPlotConfigs)
-
-
-if __name__=="__main__":
-    processedDataStoragePath = "preProcessedData/"
-    chunkSize = 24
-
-    scanConfig_Ar = cfg.SCFLYScan.ScanConfig(
-        atomicNumber = 18,
-        SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/18_atomicStateNaming.input",
-        atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.18",
-        electronTemperatures = np.concatenate([np.arange(1,10)*1e2, (np.arange(10)+1)*1e3]), # eV
-        ionDensities = np.concatenate([np.arange(1,10)*1e21, (np.arange(10)+1)*1e22]), # 1/cm^3
-        timePoints = np.arange(101) * 3.3e-17, # s
-        initialStateLevelVector = (2, 8, 6, 0, 0, 0, 0, 0, 0, 0),
-        outputBasePath = "/home/marre55/scflyInput/",
-        SCFLYBinaryPath = "/home/marre55/scfly/code/exe/scfly",
-        outputFileName = "xout",
-        dataSeriesName ="Ar_",
-        numberStatesToPlot = 470,
-        colorMap = plt.cm.tab10,
-        numColorsInColorMap = 10,
-        processedDataStoragePath = processedDataStoragePath,
-        figureStoragePath = "SCFLYArScanImages/",
-        runSCFLY = False,
-        plotEachSim = False,
-        plotSummary = True)
-
-    scanConfig_Cu = cfg.SCFLYScan.ScanConfig(
-        atomicNumber = 29,
-        SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/29_atomicStateNaming.input",
-        atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.29",
-        electronTemperatures = np.concatenate([np.arange(1,10)*1e2, (np.arange(10)+1)*1e3]), # eV
-        ionDensities = np.concatenate([np.arange(1,10)*1e21, (np.arange(10)+1)*1e22]), # 1/cm^3
-        timePoints = np.arange(101) * 3.3e-17, # s
-        initialStateLevelVector = (2, 8, 17, 0, 0, 0, 0, 0, 0, 0),
-        outputBasePath = "/home/marre55/scflyInput/",
-        SCFLYBinaryPath = "/home/marre55/scfly/code/exe/scfly",
-        outputFileName = "xout",
-        dataSeriesName ="Cu_recombination_IPD",
-        numberStatesToPlot = 870,
-        colorMap = plt.cm.tab20b,
-        numColorsInColorMap = 20,
-        processedDataStoragePath = processedDataStoragePath,
-        figureStoragePath = "SCFLY_Cu_Recombination_IPD_ScanImages/",
-        runSCFLY = False,
-        plotEachSim = False,
-        plotSummary = True)
-
-    scanConfig_Cu_2 = cfg.SCFLYScan.ScanConfig(
-        atomicNumber = 29,
-        SCFLYatomicStateNamingFile = "/home/marre55/scflyInput/29_atomicStateNaming.input",
-        atomicDataInputFile = "/home/marre55/scfly/atomicdata/FLYCHK_input_files/atomic.inp.29",
-        electronTemperatures = np.concatenate([np.arange(1,10)*1e2, (np.arange(10)+1)*1e3]), # eV
-        ionDensities = np.concatenate([[8*1e21, 9*1e21], np.arange(1,10)*1e22, (np.arange(10)+1)*1e23]), # 1/cm^3
-        timePoints = np.arange(101) * 3.3e-17, # s
-        initialStateLevelVector = (2, 8, 14, 0, 0, 0, 0, 0, 0, 0),
-        outputBasePath = "/home/marre55/scflyInput/",
-        SCFLYBinaryPath = "/home/marre55/scfly/code/exe/scfly",
-        outputFileName = "xout",
-        dataSeriesName ="Cu_2_recombination_IPD",
-        numberStatesToPlot = 870,
-        colorMap = plt.cm.tab20b,
-        numColorsInColorMap = 20,
-        processedDataStoragePath = processedDataStoragePath,
-        figureStoragePath = "SCFLY_Cu_2_Recombination_IPD/",
-        runSCFLY = False,
-        plotEachSim = False,
-        plotSummary = True)
-
-    scans = [scanConfig_Cu_2, scanConfig_Cu, scanConfig_Ar]
-    runScanList(scans, chunkSize)
-
