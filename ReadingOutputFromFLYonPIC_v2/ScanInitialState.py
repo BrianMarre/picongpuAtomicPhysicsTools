@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 runSCFLY = False,
                 plotEachSim = False,
                 plotSummary = True))
-        summaryPlotConfigs.append(cfg.SummaryScanPlot.PlotConfig(
+        summaryPlotConfigs.append(cfg.SummarySCFLYScanPlot.PlotConfig(
                         loadRawEachSCLFYSim = False,
                         loadRawSummaryData = False,
                         dataSetName = "Cu " + str(z) + "+"))
@@ -69,7 +69,7 @@ if __name__ == "__main__":
                 runSCFLY = True,
                 plotEachSim = False,
                 plotSummary = True))
-        summaryPlotConfigs.append(cfg.SummaryScanPlot.PlotConfig(
+        summaryPlotConfigs.append(cfg.SummarySCFLYScanPlot.PlotConfig(
                         loadRawEachSCLFYSim = True,
                         loadRawSummaryData = True,
                         dataSetName = "Cu " + str(z) + "+"))

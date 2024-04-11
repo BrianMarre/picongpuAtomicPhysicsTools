@@ -15,7 +15,7 @@ import matplotlib.scale as scale
 
 @typeguard.typechecked
 def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
-                    summaryConfig : cfg.SummaryScanPlot.PlotConfig,
+                    summaryConfig : cfg.SummarySCFLYScanPlot.PlotConfig,
                     tasks : tuple[
                     list[SCFlyTools.BaseConfig.BaseConfig],
                     list[tuple[int,int]],
@@ -96,7 +96,7 @@ def processScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
 
 @typeguard.typechecked
 def loadScanData(scanConfig : cfg.SCFLYScan.ScanConfig,
-                 summaryConfig : cfg.SummaryScanPlot.PlotConfig,
+                 summaryConfig : cfg.SummarySCFLYScanPlot.PlotConfig,
                  tasks : tuple[
                     list[SCFlyTools.BaseConfig.BaseConfig],
                     list[tuple[int,int]],
@@ -141,7 +141,7 @@ def plotSummary(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
                     list[SCFlyTools.BaseConfig.BaseConfig],
                     list[tuple[int,int]],
                     dict[str, int]]],
-                summaryConfigList : list[cfg.SummaryScanPlot.PlotConfig]):
+                summaryConfigList : list[cfg.SummarySCFLYScanPlot.PlotConfig]):
     """plot summary plot for each scanConfig into combined figure"""
 
     # check for consistent storage paths
@@ -245,7 +245,7 @@ if __name__ == "__main__":
         plotEachSim = False,
         plotSummary = True)
 
-    summaryConfig_Cu = cfg.SummaryScanPlot.PlotConfig(
+    summaryConfig_Cu = cfg.SummarySCFLYScanPlot.PlotConfig(
         loadRawEachSCLFYSim = False,
         loadRawSummaryData = True,
         dataSetName = "Cu Initial: 2+")

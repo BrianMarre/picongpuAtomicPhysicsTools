@@ -1,6 +1,6 @@
 from . import AtomicPopulationPlot
 from . import TimingDataPlot
 from . import SCFLYScan
-from . import SummaryScanPlot
+from . import SummarySCFLYScanPlot
 
-__all__ = ["AtomicPopulationPlot", "TimingDataPlot", "SCFLYScan", "SummaryScanPlot"]
+__all__ = ["AtomicPopulationPlot", "TimingDataPlot", "SCFLYScan", "SummarySCFLYScanPlot"]

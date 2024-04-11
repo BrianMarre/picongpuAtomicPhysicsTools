@@ -10,7 +10,7 @@ import subprocess
 
 import SCFlyTools
 import PlotAtomicPopulations as plotter
-import PlotSummaryScan as summary
+import PlotSummarySCFLYScan as summary
 import Config as cfg
 
 
@@ -124,7 +124,7 @@ def plotEachSCFLYScan(tasks : list[cfg.AtomicPopulationPlot.PlotConfig], FLYonPI
 def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
                 chunkSize : int = 1,
                 plotCombined : bool = False,
-                summaryPlotConfigs : list[cfg.SummaryScanPlot.PlotConfig] = None):
+                summaryPlotConfigs : list[cfg.SummarySCFLYScanPlot.PlotConfig] = None):
 
     tasksList = []
     generatedSummaryPlotConfigs = []
@@ -152,7 +152,7 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
             summary.plotSummary(
                 [scanConfig],
                 [(baseConfigs, conditions, axisDict_conditions)],
-                [cfg.SummaryScanPlot.PlotConfig(
+                [cfg.SummarySCFLYScanPlot.PlotConfig(
                     loadRawEachSCLFYSim = True,
                     loadRawSummaryData = True,
                     dataSetName = scanConfig.dataSeriesName)])
@@ -160,7 +160,7 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
             tasksList.append((baseConfigs, conditions, axisDict_conditions))
             if summaryPlotConfigs is None:
                 generatedSummaryPlotConfigs.append(
-                    cfg.SummaryScanPlot.PlotConfig(
+                    cfg.SummarySCFLYScanPlot.PlotConfig(
                         loadRawEachSCLFYSim = True,
                         loadRawSummaryData = True,
                         dataSetName = scanConfig.dataSeriesName))
