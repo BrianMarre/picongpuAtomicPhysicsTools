@@ -112,17 +112,3 @@ def plot(config : cfg.TimingDataPlot.TimingDataPlot):
     lgd_timeSteps = axes_timeSteps.legend(handles, labels, loc='upper right', bbox_to_anchor=(1.21, 1.05), fontsize='small')
 
     plt.savefig(config.fileName, bbox_extra_artists=(lgd_timeSteps,lgd_timeTotal, title), bbox_inches='tight')
-
-if __name__ == "__main__":
-    basePath_Cu = "/home/marre55/picInputs/scflyComparison_Cu/"
-    files_Cu = ["output_compare_30ppc_1.result", "output_compare_30ppc_2.result", "output_compare_30ppc_3.result", "output_compare_30ppc_4.result"]
-
-    config_Copper = cfg.TimingDataPlot.TimingDataPlot(
-        [basePath_Cu],
-        [files_Cu],
-        ["60ppc"],
-        "TimingData_Cu_PressureIonization_IPD_60ppc_alpha_01",
-        # plot init and finalize time
-        False)
-
-    plot(config_Copper)
