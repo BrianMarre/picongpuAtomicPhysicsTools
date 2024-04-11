@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
-import Reader
-import Config as cfg
+from . import Reader
+from . import Config as cfg
 
 import typeguard
 

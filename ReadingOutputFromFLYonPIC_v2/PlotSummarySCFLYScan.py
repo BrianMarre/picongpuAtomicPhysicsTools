@@ -15,10 +15,10 @@ import json
 from tqdm import tqdm
 import numpy as np
 
-import PlotAtomicPopulations
-import ScanSCFLY as scan
-import SCFlyTools
-import Config as cfg
+from . import PlotAtomicPopulations
+from . import ScanSCFLY as scan
+from . import SCFlyTools
+from . import Config as cfg
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as color

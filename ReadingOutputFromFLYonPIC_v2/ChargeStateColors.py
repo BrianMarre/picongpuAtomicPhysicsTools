@@ -10,7 +10,7 @@ License: GPLv3+
 """
 
 import typeguard
-import Config as cfg
+from . import Config as cfg
 
 @typeguard.typechecked
 def getChargeStateColors(config : cfg.AtomicPopulationPlot.PlotConfig, additionalIndices : list[int] = []):

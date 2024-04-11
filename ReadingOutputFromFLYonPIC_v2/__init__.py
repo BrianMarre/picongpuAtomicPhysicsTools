@@ -9,35 +9,34 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-# helpers
-from . import ChargeStateColors
-
-# file readers
-from . import Reader
+# configs for plotting
+from . import Config
 
 # generating SCFLY setups
 from . import SCFlyTools
 
-# configs for plotting
-from . import Config
+# file readers
+from . import Reader
 
-#plotting libraries
-from . import PlotAtomicPopulationData
-from . import PlotTimingData
-from . import PlotSummarySCFLYScan
+# helpers
+from . import ChargeStateColors
 
 # scan with SCFLY
 from . import ScanSCFLY
-from . import ScanInitialState
+
+#plotting libraries
+from . import PlotAtomicPopulations
+from . import PlotTimingData
+from . import PlotSummarySCFLYScan
 
 __all__ = [
-    "ChargeStateColors",
-    "Reader",
-    "SCFlyTools",
     "Config",
+    "SCFlyTools",
+    "Reader",
+    "ChargeStateColors",
     "ScanSCFLY",
     "ScanInitialState",
-    "PlotAtomicPopulationData",
+    "PlotAtomicPopulations",
     "PlotTimingData",
     "PlotSummarySCFLYScan"]
 

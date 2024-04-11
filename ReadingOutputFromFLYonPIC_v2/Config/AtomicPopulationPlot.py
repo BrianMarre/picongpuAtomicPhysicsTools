@@ -11,8 +11,6 @@ License: GPLv3+
 
 import pydantic
 import typing
-import matplotlib.colors as color
-
 
 class PlotConfig(pydantic.BaseModel):
     """Config object for plotting atomic populations"""

@@ -16,10 +16,10 @@ import math
 import json
 from tqdm import tqdm
 
-import Reader
-import SCFlyTools.AtomicConfigNumberConversion as conv
-import Config as cfg
-import ChargeStateColors
+from . import Reader
+from .SCFlyTools import AtomicConfigNumberConversion as conv
+from . import Config as cfg
+from . import ChargeStateColors
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as color

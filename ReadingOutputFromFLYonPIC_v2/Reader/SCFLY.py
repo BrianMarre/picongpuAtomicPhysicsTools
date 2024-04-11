@@ -10,7 +10,7 @@ License: GPLv3+
 """
 
 import numpy as np
-import SCFlyTools.AtomicConfigNumberConversion as conv
+from ..SCFlyTools import AtomicConfigNumberConversion as conv
 
 def readSCFLYNames(fileName, Z, numLevels):
     """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
