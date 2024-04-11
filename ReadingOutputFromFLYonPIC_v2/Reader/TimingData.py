@@ -100,7 +100,3 @@ def readTimingData(fileName : str):
     del output
 
     return result
-
-if __name__ == "__main__":
-    fileName = "/home/marre55/picInputs/testSCFlyComparison/output_compare_30ppc_2.result"
-    print(readTimingData(fileName))

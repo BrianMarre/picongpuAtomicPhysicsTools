@@ -1,16 +1,5 @@
-"""
-This file is part of the FLYonPIC_Eval.
-Copyright 2024 PIConGPU contributors
-
-Distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-Authors: Brian Edward Marre
-License: GPLv3+
-"""
-
 import numpy as np
-from ..SCFlyTools import AtomicConfigNumberConversion as conv
+import SCFlyTools.AtomicConfigNumberConversion as conv
 
 def readSCFLYNames(fileName, Z, numLevels):
     """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
@@ -162,16 +151,3 @@ def getSCFLY_Data(fileName, SCFLY_to_FLYonPIC):
             timeData[start + j] = timeDataByBlockSize[blockSize][blockIndex[blockSize]][entry]
 
     return atomicStatePopulationData, {'timeStep':0, 'atomicState':1}, atomicConfigNumbers, timeData
-
-if __name__ == "__main__":
-    numLevels = 10
-    Z = 18
-
-    SCFLY_output = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/xout"
-    SCFLY_stateNames = "/home/marre55/scflyInput/testCase_ComparisonToFLYonPIC/atomicStateNaming.input"
-
-    # load in state names
-    SCFLY_to_FLYonPIC, temp= readSCFLYNames(SCFLY_stateNames, Z, numLevels)
-    del temp
-    # get all unique BlockSizes
-    atomicPopulationData, atomicConfigNumbers, timeData = getSCFLY_Data(SCFLY_output, SCFLY_to_FLYonPIC)
