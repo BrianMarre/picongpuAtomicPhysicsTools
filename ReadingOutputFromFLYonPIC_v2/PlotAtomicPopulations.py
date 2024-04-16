@@ -27,7 +27,6 @@ import matplotlib.scale as scale
 
 from labellines import labelLines
 
-
 @typeguard.typechecked
 def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     if(config.FLYonPICAtomicStateInputDataFile == ""):
@@ -35,50 +34,44 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     if(len(config.FLYonPICOutputFileNames) == 0):
         return None, None, None, None, None
 
-    # load atomic input Data for common indexation of atomic states
-    atomicStates = np.loadtxt(
+    # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
+    atomicConfigNumbers = np.loadtxt(
         config.FLYonPICAtomicStateInputDataFile,
         dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
 
-    state_to_collectionIndex = {}
-    collectionIndex_to_atomicConfigNumber = {}
-    for i, state in enumerate(atomicStates):
-        state_to_collectionIndex[state] = i
-        collectionIndex_to_atomicConfigNumber[i] = int(state)
-        assert(int(state) == state)
-    del atomicStates
+    numberSamples = len(config.FLYonPICOutputFileNames)
+    numberAtomicStates = np.shape(atomicConfigNumbers)[0]
 
     # load in FLYonPIC data
     sampleListAtomicPopulationData = []
     sampleListTimeSteps = []
     for fileName in config.FLYonPICOutputFileNames:
-        sampleAtomicPopulationData, sampleTimeSteps = Reader.openPMD.getAtomicPopulationData(
-            config.FLYonPICBasePath + fileName, config.speciesName, collectionIndex_to_atomicConfigNumber)
-        sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
+        sampleAccumulatedWeights, sampleTimeSteps, typicalWeight = Reader.openPMD.getAtomicPopulationData(
+            config.FLYonPICBasePath + fileName,
+            config.speciesName,
+            numberAtomicStates,
+            config.numberWorkers,
+            config.chunkSize)
+
+        sampleListAtomicPopulationData.append(sampleAccumulatedWeights)
         sampleListTimeSteps.append(sampleTimeSteps)
+        del typicalWeight
 
-    numberSamples = len(config.FLYonPICOutputFileNames)
-    numberAtomicStates = len(state_to_collectionIndex.keys())
-    numberIterations = len(sampleListTimeSteps[0])
+    numberIterations = np.shape(sampleListTimeSteps[0])[0]
 
+    # check for common time steps
     for sampleTimeSteps in sampleListTimeSteps[1:]:
         if np.any(sampleTimeSteps != sampleListTimeSteps[0]):
             raise RuntimeError("inconsistent time steps in samples")
 
-    timeSteps = np.array(sampleListTimeSteps[0])
+    timeSteps = sampleListTimeSteps[0]
     del sampleListTimeSteps
 
-    # get array with all atomicConfigNumbers
-    atomicConfigNumbers = np.fromiter(
-        map(lambda i : collectionIndex_to_atomicConfigNumber[i], np.arange(numberAtomicStates)), dtype = 'u8')
-    del collectionIndex_to_atomicConfigNumber
-
-    # convert population data to array
+    # throw data into common to array, must be done here since
     data = np.empty((numberSamples, numberIterations, numberAtomicStates), dtype='f8')
     for i, sample in enumerate(sampleListAtomicPopulationData):
-        for state, index in state_to_collectionIndex.items():
-            data[i, :, index] = np.fromiter(
-                map(lambda iteration: 0 if (iteration.get(state) is None) else iteration[state], sample), dtype='f8')
+        data[i] = sample
+    del sampleListAtomicPopulationData
 
     # calculate total density
     totalDensity = np.empty((numberSamples, numberIterations), dtype='f8')
