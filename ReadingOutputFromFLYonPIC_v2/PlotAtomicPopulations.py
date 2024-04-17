@@ -136,8 +136,7 @@ def reduceToPerChargeState(config : cfg.AtomicPopulationPlot.PlotConfig, populat
     assert(axisDict['timeStep'] == 0)
     assert(axisDict['atomicState'] == 1)
 
-
-    # reduce t per charge state
+    # reduce to per charge state
     chargeStateData = np.zeros((numberTimeSteps, config.atomicNumber + 1))
     for i in range(numberAtomicStates):
         atomicConfigNumber = atomicConfigNumbers[i]
@@ -269,7 +268,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
             # find numberStatesToPlot highest abundance states of the last iteration
             lastIteration = mean[:,-1]
             sortedIndexationLastIteration = np.argsort(lastIteration)
-            collectionIndicesOfPlotStates = sortedIndexationLastIteration[-numberStatesToPlot:]
+            collectionIndicesOfPlotStates = sortedIndexationLastIteration[-config.numberStatesToPlot:]
 
             # find initial state with highest abundance
             if axisDict_FLYonPIC['timeStep'] == 0:
@@ -293,7 +292,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
             otherStateMask = np.full(numberAtomicStates, True, dtype='b')
 
             ### remove all plot states
-            for i in range(numberStatesToPlot):
+            for i in range(config.numberStatesToPlot):
                 otherStateMask = np.logical_and(np.arange(numberAtomicStates) != collectionIndicesOfPlotStates[i], otherStateMask)
 
             ### remove initial state
@@ -301,9 +300,9 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
 
             ## sum over all other states according to mask
             mean_other = np.fromiter(
-                map(lambda iteration : math.fsum(iteration), np.transpose(mean[:, otherStateMask])), dtype='f8')
+                map(lambda iteration : math.fsum(iteration), mean[:, otherStateMask]), dtype='f8')
             stdDev_other= np.sqrt(np.fromiter(
-                map(lambda stdDevValue : math.fsum(stdDevValue**2), np.transpose(stdDev[:, otherStateMask])),
+                map(lambda stdDevValue : math.fsum(stdDevValue**2), stdDev[:, otherStateMask]),
                 dtype='f8'))
         else:
             # @attention we assume atomic State input file to be valid, i.e. already correctly sorted
@@ -332,7 +331,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
         if(config.numberStatesToPlot < (numberAtomicStates - 2)):
             #plot initial state
             ## plot mean value
-            chargeState = conv.getChargeState(atomicConfigNumbers[collectionIndexInitialMaxAbundanceState],
+            chargeState = conv.getChargeState(atomicConfigNumbers_FLYonPIC[collectionIndexInitialMaxAbundanceState],
                                                 config.atomicNumber, config.numLevels)
             axes.plot(timeSteps_FLYonPIC, mean[:, collectionIndexInitialMaxAbundanceState] + offset, linewidth=1,
                         alpha=0.5, color=colorChargeStates[chargeState],
@@ -650,6 +649,7 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FL
     plt.close(figure)
     print()
 
+
 @typeguard.typechecked
 def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
                      mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
@@ -668,12 +668,11 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
 
     maxTime = 0
 
+    haveFLYonPICdata = ((type(mean) == np.ndarray) and (type(stdDev) == np.ndarray)
+        and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray) and (type(timeSteps_FLYonPIC) == np.ndarray)
+        and (axisDict_FLYonPIC != None))
  # if have FLYonPIC data, plot it
-    if((type(mean) == np.ndarray)
-       and (type(stdDev) == np.ndarray)
-       and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray)
-       and (type(timeSteps_FLYonPIC) == np.ndarray)
-       and (axisDict_FLYonPIC != None)):
+    if haveFLYonPICdata:
 
         numberAtomicStates = np.shape(mean)[0]
         maxTime = max(maxTime, np.max(timeSteps_FLYonPIC))
