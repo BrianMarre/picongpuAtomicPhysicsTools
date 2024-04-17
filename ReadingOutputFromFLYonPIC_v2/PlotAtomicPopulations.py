@@ -27,7 +27,6 @@ import matplotlib.scale as scale
 
 from labellines import labelLines
 
-
 @typeguard.typechecked
 def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     if(config.FLYonPICAtomicStateInputDataFile == ""):
@@ -35,50 +34,44 @@ def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
     if(len(config.FLYonPICOutputFileNames) == 0):
         return None, None, None, None, None
 
-    # load atomic input Data for common indexation of atomic states
-    atomicStates = np.loadtxt(
+    # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
+    atomicConfigNumbers = np.loadtxt(
         config.FLYonPICAtomicStateInputDataFile,
         dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
 
-    state_to_collectionIndex = {}
-    collectionIndex_to_atomicConfigNumber = {}
-    for i, state in enumerate(atomicStates):
-        state_to_collectionIndex[state] = i
-        collectionIndex_to_atomicConfigNumber[i] = int(state)
-        assert(int(state) == state)
-    del atomicStates
+    numberSamples = len(config.FLYonPICOutputFileNames)
+    numberAtomicStates = np.shape(atomicConfigNumbers)[0]
 
     # load in FLYonPIC data
     sampleListAtomicPopulationData = []
     sampleListTimeSteps = []
     for fileName in config.FLYonPICOutputFileNames:
-        sampleAtomicPopulationData, sampleTimeSteps = Reader.openPMD.getAtomicPopulationData(
-            config.FLYonPICBasePath + fileName, config.speciesName, collectionIndex_to_atomicConfigNumber)
-        sampleListAtomicPopulationData.append(sampleAtomicPopulationData)
+        sampleAccumulatedWeights, sampleTimeSteps, typicalWeight = Reader.openPMD.getAtomicPopulationData(
+            config.FLYonPICBasePath + fileName,
+            config.speciesName,
+            numberAtomicStates,
+            config.numberWorkers,
+            config.chunkSize)
+
+        sampleListAtomicPopulationData.append(sampleAccumulatedWeights)
         sampleListTimeSteps.append(sampleTimeSteps)
+        del typicalWeight
 
-    numberSamples = len(config.FLYonPICOutputFileNames)
-    numberAtomicStates = len(state_to_collectionIndex.keys())
-    numberIterations = len(sampleListTimeSteps[0])
+    numberIterations = np.shape(sampleListTimeSteps[0])[0]
 
+    # check for common time steps
     for sampleTimeSteps in sampleListTimeSteps[1:]:
         if np.any(sampleTimeSteps != sampleListTimeSteps[0]):
             raise RuntimeError("inconsistent time steps in samples")
 
-    timeSteps = np.array(sampleListTimeSteps[0])
+    timeSteps = sampleListTimeSteps[0]
     del sampleListTimeSteps
 
-    # get array with all atomicConfigNumbers
-    atomicConfigNumbers = np.fromiter(
-        map(lambda i : collectionIndex_to_atomicConfigNumber[i], np.arange(numberAtomicStates)), dtype = 'u8')
-    del collectionIndex_to_atomicConfigNumber
-
-    # convert population data to array
+    # throw data into common to array, must be done here since
     data = np.empty((numberSamples, numberIterations, numberAtomicStates), dtype='f8')
     for i, sample in enumerate(sampleListAtomicPopulationData):
-        for state, index in state_to_collectionIndex.items():
-            data[i, :, index] = np.fromiter(
-                map(lambda iteration: 0 if (iteration.get(state) is None) else iteration[state], sample), dtype='f8')
+        data[i] = sample
+    del sampleListAtomicPopulationData
 
     # calculate total density
     totalDensity = np.empty((numberSamples, numberIterations), dtype='f8')
@@ -143,8 +136,7 @@ def reduceToPerChargeState(config : cfg.AtomicPopulationPlot.PlotConfig, populat
     assert(axisDict['timeStep'] == 0)
     assert(axisDict['atomicState'] == 1)
 
-
-    # reduce t per charge state
+    # reduce to per charge state
     chargeStateData = np.zeros((numberTimeSteps, config.atomicNumber + 1))
     for i in range(numberAtomicStates):
         atomicConfigNumber = atomicConfigNumbers[i]
@@ -276,7 +268,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
             # find numberStatesToPlot highest abundance states of the last iteration
             lastIteration = mean[:,-1]
             sortedIndexationLastIteration = np.argsort(lastIteration)
-            collectionIndicesOfPlotStates = sortedIndexationLastIteration[-numberStatesToPlot:]
+            collectionIndicesOfPlotStates = sortedIndexationLastIteration[-config.numberStatesToPlot:]
 
             # find initial state with highest abundance
             if axisDict_FLYonPIC['timeStep'] == 0:
@@ -300,7 +292,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
             otherStateMask = np.full(numberAtomicStates, True, dtype='b')
 
             ### remove all plot states
-            for i in range(numberStatesToPlot):
+            for i in range(config.numberStatesToPlot):
                 otherStateMask = np.logical_and(np.arange(numberAtomicStates) != collectionIndicesOfPlotStates[i], otherStateMask)
 
             ### remove initial state
@@ -308,9 +300,9 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
 
             ## sum over all other states according to mask
             mean_other = np.fromiter(
-                map(lambda iteration : math.fsum(iteration), np.transpose(mean[:, otherStateMask])), dtype='f8')
+                map(lambda iteration : math.fsum(iteration), mean[:, otherStateMask]), dtype='f8')
             stdDev_other= np.sqrt(np.fromiter(
-                map(lambda stdDevValue : math.fsum(stdDevValue**2), np.transpose(stdDev[:, otherStateMask])),
+                map(lambda stdDevValue : math.fsum(stdDevValue**2), stdDev[:, otherStateMask]),
                 dtype='f8'))
         else:
             # @attention we assume atomic State input file to be valid, i.e. already correctly sorted
@@ -339,7 +331,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
         if(config.numberStatesToPlot < (numberAtomicStates - 2)):
             #plot initial state
             ## plot mean value
-            chargeState = conv.getChargeState(atomicConfigNumbers[collectionIndexInitialMaxAbundanceState],
+            chargeState = conv.getChargeState(atomicConfigNumbers_FLYonPIC[collectionIndexInitialMaxAbundanceState],
                                                 config.atomicNumber, config.numLevels)
             axes.plot(timeSteps_FLYonPIC, mean[:, collectionIndexInitialMaxAbundanceState] + offset, linewidth=1,
                         alpha=0.5, color=colorChargeStates[chargeState],
@@ -657,6 +649,7 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FL
     plt.close(figure)
     print()
 
+
 @typeguard.typechecked
 def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
                      mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
@@ -675,12 +668,11 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
 
     maxTime = 0
 
+    haveFLYonPICdata = ((type(mean) == np.ndarray) and (type(stdDev) == np.ndarray)
+        and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray) and (type(timeSteps_FLYonPIC) == np.ndarray)
+        and (axisDict_FLYonPIC != None))
  # if have FLYonPIC data, plot it
-    if((type(mean) == np.ndarray)
-       and (type(stdDev) == np.ndarray)
-       and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray)
-       and (type(timeSteps_FLYonPIC) == np.ndarray)
-       and (axisDict_FLYonPIC != None)):
+    if haveFLYonPICdata:
 
         numberAtomicStates = np.shape(mean)[0]
         maxTime = max(maxTime, np.max(timeSteps_FLYonPIC))

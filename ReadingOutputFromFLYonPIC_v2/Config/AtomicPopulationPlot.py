@@ -30,6 +30,10 @@ class PlotConfig(pydantic.BaseModel):
     FLYonPICBasePath : str
     # FLYonPIC output fileNames, each a regex describing openPMD naming of openPMD output files
     FLYonPICOutputFileNames : list[str]
+    # number of threads to use for loading data
+    numberWorkers : int
+    # number of particles to pass to each thread
+    chunkSize : int
 
     # path of SCFLY output file
     SCFLYOutputFileName : str

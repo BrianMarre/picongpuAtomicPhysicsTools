@@ -8,89 +8,130 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
 Authors: Brian Edward Marre
 License: GPLv3+
 """
-
 import openpmd_api as io
+
+import numba
 import numpy as np
-import math
-import typeguard
+import numpy.typing as npt
 from tqdm import tqdm
 
+import typeguard
+
+@numba.jit(fastmath=True, nopython=True, cache=True)
+def fastHistogram(weights, atomicStateCollectionIndices, typicalWeight, numberAtomicStates):
+    """ kernel for accumulating weight of entries according to their atomicStateCollectionIndex
+
+        @param weights array of weight values
+        @param atomicStateCollectionIndices array of atomicStateCollectionIndices corresponding to weights
+        @param typicalWeight normalization factor for weight accumulation
+        @param numberAtomicStates number of atomic states in the input,
+            all entries in atomicStateCollectionIndices must be < numberAtomicStates
+    """
+
+    # number of possible atomicStateCollectionIndice Values
+    result = np.zeros(numberAtomicStates)
+
+    for entryIdx in range(atomicStateCollectionIndices.shape[0]):
+        state = atomicStateCollectionIndices[entryIdx]
+        result[state] += weights[entryIdx] / typicalWeight
+
+    return result
+
+@numba.jit(cache=True, parallel=True)
+def callFastHistogramInParallel(weights, atomicStates, typicalWeight, numberAtomicStates, numberWorkers, chunkSize):
+    """ stage for parallel call of fast histogram kernel
+
+        @param weights array of weight values
+        @param atomicStates array of atomicStateCollectionIndices corresponding to weights
+        @param typicalWeight normalization factor for weight accumulation
+        @param numberAtomicStates number of atomic states in the input,
+            all entries in atomicStateCollectionIndices must be < numberAtomicStates
+        @param numberWorkers number of parallel worker to use
+        @param chunkSize number of entries to attempt to pass to each worker each iteration
+    """
+
+    numberChunks = int(np.ceil(weights.shape[0] / chunkSize))
+    numberIterations = int(np.ceil(numberChunks / numberWorkers))
+
+    result = np.zeros((numberWorkers + 1, numberAtomicStates), dtype=np.float32)
+
+    for iterationIdx in range(numberIterations):
+        for workerIdx in numba.prange(numberWorkers):
+            if (numberChunks > (iterationIdx * numberWorkers + workerIdx)):
+                # get chunks of allocated memory, will return empty views if no data remaining
+                w_ = weights[(iterationIdx * numberWorkers + workerIdx) * chunkSize:(iterationIdx * numberWorkers + workerIdx + 1) * chunkSize]
+                s_ = atomicStates[(iterationIdx * numberWorkers + workerIdx) * chunkSize:(iterationIdx * numberWorkers + workerIdx + 1) * chunkSize]
+
+                # store intermediate result in workers own memory
+                result[workerIdx + 1] += fastHistogram(w_, s_, typicalWeight, numberAtomicStates)
+
+        # sum worker results, to final accumulation
+        result[0,:] = np.sum(result[1:], axis=0)
+        # reset worker memory to avoid double counting
+        result[1:, :] = 0
+
+    # return final values of summation column
+    return result[0, :]
+
 @typeguard.typechecked
-def getAtomicPopulationData(filename : str, speciesName : str, collectionIndex_to_atomicConfigNumber : dict[int, int]):
+def getAtomicPopulationData(
+        filename : str,
+        speciesName : str,
+        numberAtomicStates : int,
+        numberWorkers : int,
+        chunkSize : int):#, collectionIndex_to_atomicConfigNumber : npt.NDArray[np.uint64]):
     """ returns the atomic state data of an openPMD particle output of a simulation
 
         Paramters:
             filename(string-like) ... filenames of data input
             speciesName(string-like) ... string identifier of species
-            collectionIndex_to_atomicConfigNumber .. dictionary[collectionIndex:atomicConfigNumber] as in FYLonPIC input
+            collectionIndex_to_atomicConfigNumber .. numpy.array[collectionIndex] = atomicConfigNumber as used in
+                FYLonPIC input
 
-        return value: list of dictionaries, each entry of the list corresponds to one
-            iteration and each dictionary contains all occupied states and their
-            associated weight as key-value pair
-
-        @note this function is exessively commented, such that it may be used as an
-        introduction to using the openPMD-api.
+        @returns np.array(numberIterations)= time and np.array((numberTimeSteps, numberAtomicStates))= accumulatedWeight
     """
-    # open a series of adios [.bp] files, in read only mode
     series = io.Series(filename, io.Access.read_only)
 
-    #particle data available output, debug code
-    #step = series.iterations[0]
-    #for particleSpecies in step.particles:
-    #    print("\t {0}".format(particleSpecies))
-    #    print("With records:")
-    #    for record in step.particles[particleSpecies]:
-    #        print("\t {0}".format(record))
+    numberIterations = np.shape(series.iterations)[0]
 
-    listIterationData = []
-    listTimeSteps = []
+    accumulatedWeight = np.empty((numberIterations, numberAtomicStates))
+    timeSteps = np.empty(numberIterations, dtype='f8')
 
     print(filename + " iteration:")
-    for i in tqdm(series.iterations):
+    for stepIdx in tqdm(range(numberIterations)):
 
-        # select simulation iteration
-        step = series.iterations[i]
+        # get subGroup for simulation iteration
+        step = series.iterations[stepIdx]
 
-        # get one specific species from all species of particles
+        # get subGroup of specific species
         species = step.particles[speciesName]
 
-        listTimeSteps.append(step.get_attribute("time") * step.get_attribute("timeUnitSI"))
+        # get recordComponents
+        weightingRecordComponent = species["weighting"][io.Mesh_Record_Component.SCALAR]
+        atomicStateCollectionIndexRecordComponent = species["atomicStateCollectionIndex"][io.Mesh_Record_Component.SCALAR]
 
-        # define data to be requested later
-        atomicStateCollectionIndex = species["atomicStateCollectionIndex"][io.Mesh_Record_Component.SCALAR]
-        weighting = species["weighting"][io.Mesh_Record_Component.SCALAR]
-
-        # mark to be loaded
-        dataAtomicStateCollectionIndex = atomicStateCollectionIndex.load_chunk()
-        dataWeightings = weighting.load_chunk()
+        # mark to be loaded, @todo give option to load chunkwise
+        weights = weightingRecordComponent.load_chunk()
+        atomicStateCollectionIndices = atomicStateCollectionIndexRecordComponent.load_chunk()
 
         # load data
         series.flush()
 
-        # bin existing states
-        states = {}
+        typicalWeight = np.mean(weights[0:100])
 
-        # for all macro particles, @todo parallelise in lockstep variety
-        for j in range(0,np.shape(dataAtomicStateCollectionIndex)[0]):
-            atomicConfigNumber = collectionIndex_to_atomicConfigNumber[dataAtomicStateCollectionIndex[j]]
+        accumulatedWeight[stepIdx] = callFastHistogramInParallel(
+            weights,
+            atomicStateCollectionIndices,
+            typicalWeight,
+            numberAtomicStates,
+            numberWorkers,
+            chunkSize)
+        timeSteps[stepIdx] = step.get_attribute("time") * step.get_attribute("timeUnitSI")
 
-            # search in dictionary
-            weighting = states.get(atomicConfigNumber)
+        del weights
+        del atomicStateCollectionIndices
 
-            # exists => add weight
-            if weighting:
-                states[atomicConfigNumber].append(dataWeightings[j])
-            # does not exist create new key with weight as initial value
-            else:
-                states[atomicConfigNumber] = [dataWeightings[j]]
-
-        for state in states.keys():
-            states[state] = math.fsum(states[state])
-
-        # store data
-        listIterationData.append(states)
-
-    # delete data
+    # delete series
     del series
 
-    return listIterationData, listTimeSteps
+    return accumulatedWeight, timeSteps, typicalWeight
