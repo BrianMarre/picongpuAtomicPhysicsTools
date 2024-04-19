@@ -19,7 +19,7 @@ def getChargeStateColors(config : cfg.AtomicPopulationPlot.PlotConfig, additiona
 
     ## assign all chargeStates a color
     colorChargeStates = {}
-    for z in range(config.atomicNumber + 1):
+    for z in config.chargeStatesToPlot:
         try:
             colorChargeStates[z] = next(colors)
         except StopIteration:
