@@ -11,6 +11,7 @@ License: GPLv3+
 
 import pydantic
 import typing
+import numpy as np
 
 class PlotConfig(pydantic.BaseModel):
     """Config object for plotting atomic populations"""
@@ -21,6 +22,14 @@ class PlotConfig(pydantic.BaseModel):
     # maximum principal quantum number used in SCFLY and FLYonPIC
     numLevels : int
 
+    # number of threads to use for loading FLYonPIC data
+    numberWorkers : int
+    # number of particles to pass to each thread
+    chunkSize : int
+
+    #chargeStates to plot, empty means all
+    chargeStatesToPlot : list[int]
+
     # path of file FLYonPIC atomic state data input file
     FLYonPICAtomicStateInputDataFile : str
     # path to atomciStateNaming.input file, contains for each SCFLY state its corresponding occupation number vector
@@ -30,10 +39,6 @@ class PlotConfig(pydantic.BaseModel):
     FLYonPICBasePath : str
     # FLYonPIC output fileNames, each a regex describing openPMD naming of openPMD output files
     FLYonPICOutputFileNames : list[str]
-    # number of threads to use for loading data
-    numberWorkers : int
-    # number of particles to pass to each thread
-    chunkSize : int
 
     # path of SCFLY output file
     SCFLYOutputFileName : str
