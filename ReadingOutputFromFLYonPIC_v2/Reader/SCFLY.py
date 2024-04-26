@@ -12,8 +12,12 @@ License: GPLv3+
 import numpy as np
 from ..SCFlyTools import AtomicConfigNumberConversion as conv
 
-def readSCFLYNames(fileName, Z, numLevels):
-    """read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
+import typeguard
+
+@typeguard.typechecked
+def readSCFLYNames(fileName: str, Z: int , numLevels: int):
+    """
+    read SCFly atomic state names from file and convert them to FLYonPIC atomicConfigNumbers
 
     @attention states must be uniquely described by their shell occupation number vector!
 
@@ -22,7 +26,7 @@ def readSCFLYNames(fileName, Z, numLevels):
         file must give in each line name of one state and occupation number for each shell for state
 
         Exp.: h_10001 1 0 0 0 0 0 0 0 0 0\n ...
-    @param Z atomic number of the element for which atomic states are contained
+    @param Z atomic number of the element for which atomic states are contained in the file
 
      @returns dict of {SCFLYname : FLYonPIC_atomicConfigNumber}
     """
@@ -53,9 +57,10 @@ def readSCFLYNames(fileName, Z, numLevels):
 
     return SCFLYStateName_to_atomicConfigNumber, atomicConfigNumber_to_StateName
 
-
-def getSCFLY_Data(fileName, SCFLY_to_FLYonPIC):
-    """load SCLFY main output file and extract population data
+@typeguard.typechecked
+def getSCFLY_PopulationData(fileName : str, SCFLY_to_FLYonPIC : dict):
+    """
+    load SCLFY main output file and extract population data
 
     @param fileName main output file of SCFLY
     @param SCFLY_to_FLYonPIC dictionary converting SCFLY state names to FLYonPIC atomiConfigNumbers
@@ -162,3 +167,22 @@ def getSCFLY_Data(fileName, SCFLY_to_FLYonPIC):
             timeData[start + j] = timeDataByBlockSize[blockSize][blockIndex[blockSize]][entry]
 
     return atomicStatePopulationData, {'timeStep':0, 'atomicState':1}, atomicConfigNumbers, timeData
+
+@typeguard.typechecked
+def getSCFLY_FirstStepRates(fileName : str, SCFLY_to_FLYonPIC : dict[str, int]):
+    """
+    load SCLFY atomic.data output file and extract population data
+
+    @param fileName atomic.data output file of SCFLY
+    @param SCFLY_to_FLYonPIC dictionary converting SCFLY state names to FLYonPIC atomiConfigNumbers
+
+    @returns rateData[numberStates, numerTimeSteps],
+
+    noChange = 0
+    spontaneousDeexcitation = 1
+    electronicExcitation = 2
+    electronicDeexcitation = 3
+    electronicIonization = 4
+    autonomousIonization = 5
+    """
+    "test"
