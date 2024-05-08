@@ -79,7 +79,7 @@ def getAtomicPopulationData(
         speciesName : str,
         numberAtomicStates : int,
         numberWorkers : int,
-        chunkSize : int):#, collectionIndex_to_atomicConfigNumber : npt.NDArray[np.uint64]):
+        chunkSize : int):
     """ returns the atomic state data of an openPMD particle output of a simulation
 
         Paramters:
@@ -98,7 +98,7 @@ def getAtomicPopulationData(
     timeSteps = np.empty(numberIterations, dtype='f8')
 
     print(filename + " iteration:")
-    for stepIdx in tqdm(range(numberIterations)):
+    for i, stepIdx in tqdm(enumerate(series.iterations)):
 
         # get subGroup for simulation iteration
         step = series.iterations[stepIdx]
@@ -119,14 +119,14 @@ def getAtomicPopulationData(
 
         typicalWeight = np.mean(weights[0:100])
 
-        accumulatedWeight[stepIdx] = callFastHistogramInParallel(
+        accumulatedWeight[i] = callFastHistogramInParallel(
             weights,
             atomicStateCollectionIndices,
             typicalWeight,
             numberAtomicStates,
             numberWorkers,
             chunkSize)
-        timeSteps[stepIdx] = step.get_attribute("time") * step.get_attribute("timeUnitSI")
+        timeSteps[i] = step.get_attribute("time") * step.get_attribute("timeUnitSI")
 
         del weights
         del atomicStateCollectionIndices
