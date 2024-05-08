@@ -101,7 +101,7 @@ def loadSCFLYdata(config : cfg.AtomicPopulationPlot.PlotConfig):
         return None, None, None, None
 
     # load data
-    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = Reader.SCFLY.getSCFLY_Data(
+    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = Reader.SCFLY.getSCFLY_PopulationData(
         config.SCFLYOutputFileName,
         Reader.SCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)[0])
 
