@@ -21,130 +21,15 @@ from .SCFlyTools import AtomicConfigNumberConversion as conv
 from . import Config as cfg
 from . import ChargeStateColors
 
+from LoadFLYonPICData import loadFLYonPICData
+from LoadSCFLYData import loadSCFLYData
+from ReduceToPerChargeState import reduceToPerChargeState
+
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
 import matplotlib.scale as scale
 
 from labellines import labelLines
-
-@typeguard.typechecked
-def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
-    if(config.FLYonPICAtomicStateInputDataFile == ""):
-        return None, None, None, None, None
-    if(len(config.FLYonPICOutputFileNames) == 0):
-        return None, None, None, None, None
-
-    # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
-    atomicConfigNumbers = np.loadtxt(
-        config.FLYonPICAtomicStateInputDataFile,
-        dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
-
-    numberSamples = len(config.FLYonPICOutputFileNames)
-    numberAtomicStates = np.shape(atomicConfigNumbers)[0]
-
-    # load in FLYonPIC data
-    sampleListAtomicPopulationData = []
-    sampleListTimeSteps = []
-    for fileName in config.FLYonPICOutputFileNames:
-        sampleAccumulatedWeights, sampleTimeSteps, typicalWeight = Reader.openPMD.getAtomicPopulationData(
-            config.FLYonPICBasePath + fileName,
-            config.speciesName,
-            numberAtomicStates,
-            config.numberWorkers,
-            config.chunkSize)
-
-        sampleListAtomicPopulationData.append(sampleAccumulatedWeights)
-        sampleListTimeSteps.append(sampleTimeSteps)
-        del typicalWeight
-
-    numberIterations = np.shape(sampleListTimeSteps[0])[0]
-
-    # check for common time steps
-    for sampleTimeSteps in sampleListTimeSteps[1:]:
-        if np.any(sampleTimeSteps != sampleListTimeSteps[0]):
-            raise RuntimeError("inconsistent time steps in samples")
-
-    timeSteps = sampleListTimeSteps[0]
-    del sampleListTimeSteps
-
-    # throw data into common to array, must be done here since
-    data = np.empty((numberSamples, numberIterations, numberAtomicStates), dtype='f8')
-    for i, sample in enumerate(sampleListAtomicPopulationData):
-        data[i] = sample
-    del sampleListAtomicPopulationData
-
-    # calculate total density
-    totalDensity = np.empty((numberSamples, numberIterations), dtype='f8')
-    for i in range(numberSamples):
-        for j in range(numberIterations):
-            totalDensity[i,j] = math.fsum(data[i, j])
-
-    # convert to relative abundances
-    data = data / totalDensity[:, :, np.newaxis]
-
-    # calculate mean abundance and standard deviation
-    mean = np.mean(data, axis = 0)
-
-    if (numberSamples > 1):
-        stdDev = np.std(data, axis = 0, ddof = 1)
-    else:
-        stdDev = np.zeros((numberIterations, numberAtomicStates))
-
-    axisDict = {'timeStep':0, 'atomicState':1}
-    return mean, stdDev, axisDict, atomicConfigNumbers, timeSteps
-
-@typeguard.typechecked
-def loadSCFLYdata(config : cfg.AtomicPopulationPlot.PlotConfig):
-    if(config.SCFLYatomicStateNamingFile == ""):
-        return None, None, None, None
-    if(config.SCFLYOutputFileName == ""):
-        return None, None, None, None
-
-    # load data
-    atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = Reader.SCFLY.getSCFLY_PopulationData(
-        config.SCFLYOutputFileName,
-        Reader.SCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)[0])
-
-    # calculate total densities
-    assert((len(np.shape(atomicPopulationData)) == 2) and (axisDict['timeStep'] == 0))
-    totalDensity = np.fromiter(map(lambda timeStep: math.fsum(timeStep) , atomicPopulationData), dtype='f8')
-    # calculate relative abundances
-    atomicPopulationData = atomicPopulationData / totalDensity[:, np.newaxis]
-
-    # sort data according to FLYonPIC sorting
-    chargeStates = np.fromiter(map(
-        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
-        atomicConfigNumbers), dtype = 'u1')
-    sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
-    del chargeStates
-
-    atomicConfigNumbersSorted = atomicConfigNumbers[sortedIndices]
-    atomicPopulationDataSorted = atomicPopulationData[:, sortedIndices]
-    del atomicConfigNumbers
-    del atomicPopulationData
-
-    return atomicPopulationDataSorted, axisDict, atomicConfigNumbersSorted, timeSteps
-
-@typeguard.typechecked
-def reduceToPerChargeState(config : cfg.AtomicPopulationPlot.PlotConfig, populationData, axisDict, atomicConfigNumbers):
-    shape = np.shape(populationData)
-    numberTimeSteps = shape[axisDict['timeStep']]
-    numberAtomicStates = shape[axisDict['atomicState']]
-    del shape
-
-    assert(numberAtomicStates == np.shape(atomicConfigNumbers)[0]), "shape of populationData not consistent with atomicConfigNumbers"
-    assert(axisDict['timeStep'] == 0)
-    assert(axisDict['atomicState'] == 1)
-
-    # reduce to per charge state
-    chargeStateData = np.zeros((numberTimeSteps, config.atomicNumber + 1))
-    for i in range(numberAtomicStates):
-        atomicConfigNumber = atomicConfigNumbers[i]
-        chargeState = conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels)
-        chargeStateData[:, int(chargeState)] += populationData[:, i]
-
-    axisDict = {'timeStep' : 0, 'chargeState' : 1}
-    return chargeStateData, axisDict
 
 @typeguard.typechecked
 def preProcess(config : cfg.AtomicPopulationPlot.PlotConfig):
