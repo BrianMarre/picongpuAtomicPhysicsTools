@@ -17,7 +17,7 @@ from tqdm import tqdm
 import typeguard
 
 @numba.jit(fastmath=True, nopython=True, cache=True)
-def fastHistogram(weights, propertyIndex, typicalWeight, numberPropertyIndexValues):
+def fastHistogram(weights, propertyIndices, typicalWeight, numberPropertyIndexValues):
     """ kernel for accumulating weight of entries according to their atomicStateCollectionIndex
 
         @param weights array of weight values
@@ -33,8 +33,8 @@ def fastHistogram(weights, propertyIndex, typicalWeight, numberPropertyIndexValu
     # number of possible atomicStateCollectionIndice Values
     result = np.zeros(numberPropertyIndexValues)
 
-    for entryIdx in range(atomicStateCollectionIndices.shape[0]):
-        state = atomicStateCollectionIndices[entryIdx]
+    for entryIdx in range(propertyIndices.shape[0]):
+        state = int(propertyIndices[entryIdx])
         result[state] += weights[entryIdx] / typicalWeight
 
     return result

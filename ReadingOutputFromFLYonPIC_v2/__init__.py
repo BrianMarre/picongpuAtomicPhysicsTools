@@ -27,6 +27,7 @@ from . import ScanSCFLY
 # processing routines
 from . import LoadFLYonPICData
 from . import LoadSCFLYData
+from . import LoadChargeStateData
 from . import ReduceToPerChargeState
 
 #plotting libraries
@@ -44,6 +45,7 @@ __all__ = [
     "ScanSCFLY",
     "LoadFLYonPICData",
     "LoadSCFLYData",
+    "LoadChargeStateData",
     "ReduceToPerChargeState",
     "PlotAtomicPopulations",
     "PlotTimingData",

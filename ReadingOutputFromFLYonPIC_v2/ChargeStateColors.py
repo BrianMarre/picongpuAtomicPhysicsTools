@@ -10,10 +10,11 @@ License: GPLv3+
 """
 
 import typeguard
+import typing
 from . import Config as cfg
 
 @typeguard.typechecked
-def getChargeStateColors(config : cfg.AtomicPopulationPlot.PlotConfig, additionalIndices : list[int] = []):
+def getChargeStateColors(config : cfg.AtomicPopulationPlot.PlotConfig | cfg.ChargeStatePlot.PlotConfig, additionalIndices : list[int] = []):
     """@return dictionary assigning one color to each charge state"""
     colors = iter([config.colorMap(i) for i in range(config.numColorsInColorMap)])
 

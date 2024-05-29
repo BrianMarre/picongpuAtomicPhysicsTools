@@ -21,9 +21,9 @@ from .SCFlyTools import AtomicConfigNumberConversion as conv
 from . import Config as cfg
 from . import ChargeStateColors
 
-from LoadFLYonPICData import loadFLYonPICData
-from LoadSCFLYData import loadSCFLYData
-from ReduceToPerChargeState import reduceToPerChargeState
+from . import LoadFLYonPICData
+from . import LoadSCFLYData
+from . import ReduceToPerChargeState
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as color
@@ -34,8 +34,8 @@ from labellines import labelLines
 @typeguard.typechecked
 def preProcess(config : cfg.AtomicPopulationPlot.PlotConfig):
     """pre process raw data, store pre processed data at config specified path and return preprocessed data"""
-    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = loadFLYonPICData(config)
-    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadSCFLYdata(config)
+    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = LoadFLYonPICData.loadFLYonPICData(config)
+    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = LoadSCFLYData.loadSCFLYdata(config)
 
     # write pre-processed data to file
     ## FLYonPIC
@@ -384,8 +384,55 @@ def plot_absolute(config : cfg.AtomicPopulationPlot.PlotConfig,
     plt.close(figure)
 
 @typeguard.typechecked
+def plotRelativeAbundanceOverall(config : cfg.AtomicPopulationPlot.PlotConfig,
+                     mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC):
+    """plot relative abundances for each atomic state and each step"""
+
+    haveFLYonPICdata = ((type(mean) == np.ndarray)
+       and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray)
+       and (type(timeSteps_FLYonPIC) == np.ndarray)
+       and (axisDict_FLYonPIC != None))
+    if not haveFLYonPICdata:
+        return
+
+    print("plotting relative abundance overall ...")
+
+    numberAtomicStates = np.shape(mean)[axisDict_FLYonPIC['atomicState']]
+    numberTimeSteps = np.shape(mean)[axisDict_FLYonPIC['timeStep']]
+
+    ## only plot states not always zero
+    notAlwaysZero = np.any(mean != 0, axis=0)
+    numberStatesToPlot = np.count_nonzero(notAlwaysZero)
+
+    Y, X = np.meshgrid(np.arange(0,numberStatesToPlot), np.arange(0,numberTimeSteps))
+
+    # prepare plot
+    figure = plt.figure(dpi=200, figsize=(20,30))
+    axes = figure.add_subplot(111)
+    title = axes.set_title("relative abundances of atomic states: " + config.dataName)
+    axes.set_xlabel("PIC step")
+    axes.set_ylabel("atomic states")
+
+    yticks = np.arange(0, numberStatesToPlot)
+    ylabels = list(map(
+        lambda atomicConfigNumber: str(conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)),
+        atomicConfigNumbers_FLYonPIC[notAlwaysZero]))
+    axes.set_yticks(yticks, ylabels)
+    axes.yaxis.set_tick_params(labelsize=2)
+
+    xticks = np.arange(0, numberTimeSteps)[::5]
+    axes.set_xticks(xticks, xticks)
+
+    print("saving ...\n")
+    plt.pcolormesh(X, Y, mean[:, notAlwaysZero], cmap=plt.cm.plasma, norm=color.LogNorm(vmin=1.e-5, vmax=2.))
+    plt.colorbar()
+    figure.tight_layout()
+    plt.savefig(config.figureStoragePath + "AtomicPopulations_" + config.dataName)
+    plt.close(figure)
+
+@typeguard.typechecked
 def plotSurplusByState(config : cfg.AtomicPopulationPlot.PlotConfig,
-                     mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
+                     mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                      atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
     """plot difference (FLYonPIC - SCFLY) for each atomic state and each step"""
 
@@ -435,7 +482,7 @@ def plotSurplusByState(config : cfg.AtomicPopulationPlot.PlotConfig,
 
 @typeguard.typechecked
 def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlot.PlotConfig,
-                  mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
+                  mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
                   atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY):
 
     numberAtomicStates = np.shape(mean)[axisDict_FLYonPIC['atomicState']]
@@ -578,7 +625,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
     axes.set_xlabel("time[s]")
     axes.set_ylabel("relative abundance")
     axes.set_yscale('log')
-    axes.set_ylim((1e-7,1))
+    axes.set_ylim((1e-5,1))
 
     maxTime = 0
 
@@ -598,7 +645,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
 
         assert(axisDict_FLYonPIC['atomicState'] == 1), "wrong axis ordering in FLYonPIC data"
 
-        chargeStateData, axisDict_ChargeState = reduceToPerChargeState(
+        chargeStateData, axisDict_ChargeState = ReduceToPerChargeState.reduceToPerChargeState(
             config, mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC)
 
         assert(axisDict_ChargeState['timeStep'] == 0)
@@ -625,7 +672,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
 
         assert(axisDict_SCFLY['atomicState'] == 1), "wrong axis ordering in SCFLY data"
 
-        chargeStateData, axisDict_ChargeState = reduceToPerChargeState(
+        chargeStateData, axisDict_ChargeState = ReduceToPerChargeState.reduceToPerChargeState(
             config, atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY)
 
         assert(axisDict_ChargeState['timeStep'] == 0)
@@ -665,15 +712,17 @@ def plot_all(
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
                 atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadProcessed(config)
 
-        plot_additive(config,
+        """plot_additive(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
-        plot_absolute(config,
+             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)"""
+        """plot_absolute(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
+             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)"""
         plotChargeStates(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
              atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
+        plotRelativeAbundanceOverall(config,
+             mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC)
 
     # plot diff plots between FLYonPIC and SCFLY
     for config in tasks_diff:
@@ -685,7 +734,7 @@ def plot_all(
                 atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadProcessed(config)
 
         plotSurplusByState(config,
-             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
+             mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
              atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
         plotStepList = [0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
         plot_StepDiff(plotStepList, config,
