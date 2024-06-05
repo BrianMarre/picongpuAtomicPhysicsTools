@@ -10,6 +10,7 @@ License: GPLv3+
 """
 
 from . import AtomicPopulationPlot
+from . import ChargeStatePlot
 from . import TimingDataPlot
 from . import SCFLYScan
 from . import SummarySCFLYScanPlot

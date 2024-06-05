@@ -24,10 +24,18 @@ from . import ChargeStateColors
 # scan with SCFLY
 from . import ScanSCFLY
 
+# processing routines
+from . import LoadFLYonPICData
+from . import LoadSCFLYData
+from . import LoadChargeStateData
+from . import ReduceToPerChargeState
+
 #plotting libraries
 from . import PlotAtomicPopulations
 from . import PlotTimingData
 from . import PlotSummarySCFLYScan
+
+
 
 __all__ = [
     "Config",
@@ -35,7 +43,10 @@ __all__ = [
     "Reader",
     "ChargeStateColors",
     "ScanSCFLY",
-    "ScanInitialState",
+    "LoadFLYonPICData",
+    "LoadSCFLYData",
+    "LoadChargeStateData",
+    "ReduceToPerChargeState",
     "PlotAtomicPopulations",
     "PlotTimingData",
     "PlotSummarySCFLYScan"]
