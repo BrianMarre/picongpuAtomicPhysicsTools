@@ -18,12 +18,12 @@ import typeguard
 
 @numba.jit(fastmath=True, nopython=True, cache=True)
 def fastHistogram(weights, propertyIndices, typicalWeight, numberPropertyIndexValues):
-    """ kernel for accumulating weight of entries according to their atomicStateCollectionIndex
+    """ kernel for accumulating weight of entries according to their propertyIndex
 
         @param weights array of weight values
-        @param propertyIndex array of property index values corresponding to weights
+        @param propertyIndices array of property index values corresponding to weight entries
         @param typicalWeight normalization factor for weight accumulation
-        @param numberIndexValues number of unique property index values in the output
+        @param numberPropertyIndexValues number of unique property index values in the output
 
         @attention 0 <= propertyIndex value < numberPropertyIndexValues
 
