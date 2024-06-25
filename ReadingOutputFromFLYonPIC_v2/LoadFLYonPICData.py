@@ -18,10 +18,12 @@ from . import Reader
 from . import Config as cfg
 
 @typeguard.typechecked
-def loadFLYonPICData(config : cfg.AtomicPopulationPlot.PlotConfig):
+def loadFLYonPICData(config : cfg.OpenPMDReader.ReaderConfig):
     if(config.FLYonPICAtomicStateInputDataFile == ""):
+        # no FLYonPIC atomic input data
         return None, None, None, None, None
     if(len(config.FLYonPICOutputFileNames) == 0):
+        # no output fileNames
         return None, None, None, None, None
 
     # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber

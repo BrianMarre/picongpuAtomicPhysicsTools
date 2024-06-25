@@ -32,10 +32,10 @@ import matplotlib.scale as scale
 from labellines import labelLines
 
 @typeguard.typechecked
-def preProcess(config : cfg.AtomicPopulationPlot.PlotConfig):
+def loadNew(config : cfg.AtomicPopulationPlot.PlotConfig):
     """pre process raw data, store pre processed data at config specified path and return preprocessed data"""
-    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = LoadFLYonPICData.loadFLYonPICData(config)
-    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = LoadSCFLYData.loadSCFLYdata(config)
+    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = LoadFLYonPICData.loadFLYonPICData(config.OpenPMDReaderConfig)
+    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = LoadSCFLYData.loadSCFLYdata(config.OpenPMDReaderConfig)
 
     # write pre-processed data to file
     ## FLYonPIC
@@ -68,13 +68,14 @@ def preProcess(config : cfg.AtomicPopulationPlot.PlotConfig):
                 + ".dict", 'w') as File:
             json.dump(axisDict_SCFLY, File)
 
+    # mark data as previously loaded
     config.loadRaw = False
 
     return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
         atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY
 
 @typeguard.typechecked
-def loadProcessed(config : cfg.AtomicPopulationPlot.PlotConfig):
+def loadPrevious(config : cfg.AtomicPopulationPlot.PlotConfig):
     """load previously processed atomic population data from file"""
 
     ## FLYonPIC
@@ -707,10 +708,10 @@ def plot_all(
         print(config.dataName)
         if(config.loadRaw):
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = preProcess(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadNew(config)
         else:
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadProcessed(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadPrevious(config)
 
         """plot_additive(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
@@ -728,10 +729,10 @@ def plot_all(
     for config in tasks_diff:
         if(config.loadRaw):
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = preProcess(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadNew(config)
         else:
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadProcessed(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadPrevious(config)
 
         plotSurplusByState(config,
              mean, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
@@ -745,10 +746,10 @@ def plot_all(
     for config in tasks_recombination:
         if(config.loadRaw):
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = preProcess(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadNew(config)
         else:
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
-                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadProcessed(config)
+                atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadPrevious(config)
 
         plotRecombinationImportance(config, FLYonPICInitialChargeState, atomicPopulationData,
                                     axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)

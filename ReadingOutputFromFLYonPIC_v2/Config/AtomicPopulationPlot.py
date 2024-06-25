@@ -9,39 +9,28 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
+from. import OpenPMDReader
+
 import pydantic
 import typing
-import numpy as np
+
+
 
 class PlotConfig(pydantic.BaseModel):
     """Config object for plotting atomic populations"""
-    # name of ion species in openPMD output
-    speciesName : str
-    # atomic number of ion species
-    atomicNumber : int
-    # maximum principal quantum number used in SCFLY and FLYonPIC
-    numLevels : int
 
-    # number of threads to use for loading FLYonPIC data
-    numberWorkers : int
-    # number of particles to pass to each thread
-    chunkSize : int
+    #openPMD reader config
+    OpenPMDReaderConfig : OpenPMDReader.ReaderConfig
 
     #chargeStates to plot, empty means all
     chargeStatesToPlot : list[int]
 
-    # path of file FLYonPIC atomic state data input file
-    FLYonPICAtomicStateInputDataFile : str
     # path to atomciStateNaming.input file, contains for each SCFLY state its corresponding occupation number vector
     SCFLYatomicStateNamingFile : str
 
-    # base path for FLYonPIC output fileNames
-    FLYonPICBasePath : str
-    # FLYonPIC output fileNames, each a regex describing openPMD naming of openPMD output files
-    FLYonPICOutputFileNames : list[str]
-
     # path of SCFLY output file
     SCFLYOutputFileName : str
+
     # name of states to plot
     numberStatesToPlot : int
     # colormap to use
@@ -49,11 +38,11 @@ class PlotConfig(pydantic.BaseModel):
     # number of colors in colormap
     numColorsInColorMap : int
 
-    # path for storing processed input data
-    processedDataStoragePath : str
     # path for storing plots
     figureStoragePath : str
+
     # descriptive name of data set, used for plot labeling and storage naming, must be unique
     dataName : str
+
     # True: read form raw simulation output, False: load previously processed data from processedDataStoragePath
     loadRaw : bool
