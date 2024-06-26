@@ -6,4 +6,4 @@ tqdm >= 4.66.1
 matplotlib >= 3.6.2
 matplotlib-label-lines >= 0.7.0
 
--r SCFlyTools/requirements.txt
+-r SCFlyTools/requirements.txt[SCFlyTools]
