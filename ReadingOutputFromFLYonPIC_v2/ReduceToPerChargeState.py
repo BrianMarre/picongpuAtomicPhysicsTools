@@ -28,10 +28,13 @@ def reduceToPerChargeState(config : cfg.AtomicPopulationPlot.PlotConfig, populat
     assert(axisDict['atomicState'] == 1)
 
     # reduce to per charge state
-    chargeStateData = np.zeros((numberTimeSteps, config.atomicNumber + 1))
+    chargeStateData = np.zeros((numberTimeSteps, config.openPMDReaderConfig.atomicNumber + 1))
     for i in range(numberAtomicStates):
         atomicConfigNumber = atomicConfigNumbers[i]
-        chargeState = conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels)
+        chargeState = conv.getChargeState(
+            atomicConfigNumber,
+            config.openPMDReaderConfig.atomicNumber,
+            config.openPMDReaderConfig.numLevels)
         chargeStateData[:, int(chargeState)] += populationData[:, i]
 
     axisDict = {'timeStep' : 0, 'chargeState' : 1}

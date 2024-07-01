@@ -34,8 +34,8 @@ from labellines import labelLines
 @typeguard.typechecked
 def loadNew(config : cfg.AtomicPopulationPlot.PlotConfig):
     """pre process raw data, store pre processed data at config specified path and return preprocessed data"""
-    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = LoadFLYonPICData.loadFLYonPICData(config.OpenPMDReaderConfig)
-    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = LoadSCFLYData.loadSCFLYdata(config.OpenPMDReaderConfig)
+    mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC = LoadFLYonPICData.loadFLYonPICData(config.openPMDReaderConfig)
+    atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = LoadSCFLYData.loadSCFLYdata(config)
 
     # write pre-processed data to file
     ## FLYonPIC
@@ -44,13 +44,13 @@ def loadNew(config : cfg.AtomicPopulationPlot.PlotConfig):
         and (type(timeSteps_FLYonPIC) == np.ndarray)
         and (type(atomicConfigNumbers_FLYonPIC) == np.ndarray)
         and (axisDict_FLYonPIC != None)):
-        np.savetxt(config.processedDataStoragePath + "mean_" + config.dataName + ".data", mean)
-        np.savetxt(config.processedDataStoragePath + "stdDev_" + config.dataName + ".data", stdDev)
-        np.savetxt(config.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_" + config.dataName + ".data",
-                   atomicConfigNumbers_FLYonPIC)
-        np.savetxt(config.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data",
-                   timeSteps_FLYonPIC)
-        with open(config.processedDataStoragePath + "axisDict_FLYonPIC_" + config.dataName
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "mean_" + config.dataName + ".data", mean)
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "stdDev_" + config.dataName + ".data", stdDev)
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_"
+                   + config.dataName + ".data", atomicConfigNumbers_FLYonPIC)
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName
+                   + ".data", timeSteps_FLYonPIC)
+        with open(config.openPMDReaderConfig.processedDataStoragePath + "axisDict_FLYonPIC_" + config.dataName
                 + ".dict", 'w') as File:
             json.dump(axisDict_FLYonPIC, File)
     ## SCFLY
@@ -58,13 +58,13 @@ def loadNew(config : cfg.AtomicPopulationPlot.PlotConfig):
         and (type(atomicConfigNumbers_SCFLY) == np.ndarray)
         and (type(timeSteps_SCFLY) == np.ndarray)
         and (axisDict_SCFLY != None)):
-        np.savetxt(config.processedDataStoragePath + "atomicPopulationData_" + config.dataName + ".data",
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "atomicPopulationData_" + config.dataName + ".data",
                 atomicPopulationData)
-        np.savetxt(config.processedDataStoragePath + "atomicConfigNumbers_" + config.dataName + ".data",
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "atomicConfigNumbers_" + config.dataName + ".data",
                 atomicConfigNumbers_SCFLY)
-        np.savetxt(config.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data",
+        np.savetxt(config.openPMDReaderConfig.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data",
                 timeSteps_SCFLY)
-        with open(config.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName
+        with open(config.openPMDReaderConfig.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName
                 + ".dict", 'w') as File:
             json.dump(axisDict_SCFLY, File)
 
@@ -79,26 +79,26 @@ def loadPrevious(config : cfg.AtomicPopulationPlot.PlotConfig):
     """load previously processed atomic population data from file"""
 
     ## FLYonPIC
-    if(config.FLYonPICAtomicStateInputDataFile == ""):
+    if(config.openPMDReaderConfig.FLYonPICAtomicStateInputDataFile == ""):
         mean = None
         stdDev = None
         axisDict_FLYonPIC = None
         atomicConfigNumbers_FLYonPIC = None
         timeSteps_FLYonPIC = None
-    elif(len(config.FLYonPICOutputFileNames) == 0):
+    elif(len(config.openPMDReaderConfig.FLYonPICOutputFileNames) == 0):
         mean = None
         stdDev = None
         axisDict_FLYonPIC = None
         atomicConfigNumbers_FLYonPIC = None
         timeSteps_FLYonPIC = None
     else:
-        mean = np.loadtxt(config.processedDataStoragePath + "mean_" + config.dataName + ".data")
-        stdDev = np.loadtxt(config.processedDataStoragePath + "stdDev_" + config.dataName + ".data")
+        mean = np.loadtxt(config.openPMDReaderConfig.processedDataStoragePath + "mean_" + config.dataName + ".data")
+        stdDev = np.loadtxt(config.openPMDReaderConfig.processedDataStoragePath + "stdDev_" + config.dataName + ".data")
         atomicConfigNumbers_FLYonPIC = np.loadtxt(
-            config.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_" + config.dataName + ".data",)
+            config.openPMDReaderConfig.processedDataStoragePath + "atomicConfigNumbers_FLYonPIC_" + config.dataName + ".data",)
         timeSteps_FLYonPIC = np.loadtxt(
-            config.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data")
-        with open(config.processedDataStoragePath + "axisDict_FLYonPIC_" + config.dataName + ".dict", 'r') as File:
+            config.openPMDReaderConfig.processedDataStoragePath + "timeSteps_FLYonPIC_" + config.dataName + ".data")
+        with open(config.openPMDReaderConfig.processedDataStoragePath + "axisDict_FLYonPIC_" + config.dataName + ".dict", 'r') as File:
             axisDict_FLYonPIC = json.load(File)
 
     ## SCFLY
@@ -113,10 +113,10 @@ def loadPrevious(config : cfg.AtomicPopulationPlot.PlotConfig):
         atomicConfigNumbers_SCFLY = None
         timeSteps_SCFLY = None
     else:
-        atomicPopulationData = np.loadtxt(config.processedDataStoragePath + "atomicPopulationData_" + config.dataName + ".data")
-        atomicConfigNumbers_SCFLY = np.loadtxt(config.processedDataStoragePath + "atomicConfigNumbers_" + config.dataName + ".data")
-        timeSteps_SCFLY = np.loadtxt(config.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data")
-        with open(config.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName + ".dict", 'r') as File:
+        atomicPopulationData = np.loadtxt(config.openPMDReaderConfig.processedDataStoragePath + "atomicPopulationData_" + config.dataName + ".data")
+        atomicConfigNumbers_SCFLY = np.loadtxt(config.openPMDReaderConfig.processedDataStoragePath + "atomicConfigNumbers_" + config.dataName + ".data")
+        timeSteps_SCFLY = np.loadtxt(config.openPMDReaderConfig.processedDataStoragePath + "timeSteps_SCFLY_" + config.dataName + ".data")
+        with open(config.openPMDReaderConfig.processedDataStoragePath + "axisDict_SCFLY_" + config.dataName + ".dict", 'r') as File:
             axisDict_SCFLY = json.load(File)
 
     return mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
@@ -154,7 +154,13 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
         assert(axisDict_FLYonPIC['timeStep'] == 0), "wrong axis ordering in FLYonPIC data according to axisDict_FLYonPIC"
 
         ## calculate charge states
-        chargeStates = np.fromiter(map(lambda configNumber: conv.getChargeState(configNumber, config.atomicNumber, config.numLevels), atomicConfigNumbers_FLYonPIC), dtype=np.uint8)
+        chargeStates = np.fromiter(map(
+                lambda configNumber: conv.getChargeState(
+                    configNumber,
+                    config.openPMDReaderConfig.atomicNumber,
+                    config.openPMDReaderConfig.numLevels),
+                atomicConfigNumbers_FLYonPIC),
+            dtype=np.uint8)
 
         ## create for mask unwanted chargeStates
         chargeStateMask = np.isin(chargeStates, np.array(config.chargeStatesToPlot, dtype=np.uint8))
@@ -282,7 +288,7 @@ def plot_additive(config : cfg.AtomicPopulationPlot.PlotConfig,
 
         # for each atomic state
         for i, configNumber in enumerate(atomicConfigNumbers_SCFLY):
-            chargeState = conv.getChargeState(configNumber, config.atomicNumber, config.numLevels)
+            chargeState = conv.getChargeState(configNumber, config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)
 
             if chargeState in config.chargeStatesToPlot:
                 axes.plot(timeSteps_SCFLY, atomicPopulationData[:, i] + offset[:, i], linewidth=1, alpha=0.5,
@@ -337,7 +343,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlot.PlotConfig,
 
         for collectionIndex in tqdm(range(numberAtomicStates)):
             chargeState = conv.getChargeState(atomicConfigNumbers_FLYonPIC[collectionIndex],
-                                              config.atomicNumber, config.numLevels)
+                                              config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)
 
             if chargeState in config.chargeStatesToPlot:
                 ### plot mean value
@@ -368,7 +374,7 @@ def plot_absolute(config : cfg.AtomicPopulationPlot.PlotConfig,
 
         # for each atomic state
         for i, configNumber in enumerate(atomicConfigNumbers_SCFLY):
-            chargeState = conv.getChargeState(configNumber, config.atomicNumber, config.numLevels)
+            chargeState = conv.getChargeState(configNumber, config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)
 
             if chargeState in config.chargeStatesToPlot:
                 axes.plot(timeSteps_SCFLY, atomicPopulationData[:, i], linewidth=1, alpha=0.5, linestyle="--",
@@ -416,7 +422,7 @@ def plotRelativeAbundanceOverall(config : cfg.AtomicPopulationPlot.PlotConfig,
 
     yticks = np.arange(0, numberStatesToPlot)
     ylabels = list(map(
-        lambda atomicConfigNumber: str(conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)),
+        lambda atomicConfigNumber: str(conv.getLevelVector(atomicConfigNumber, config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)),
         atomicConfigNumbers_FLYonPIC[notAlwaysZero]))
     axes.set_yticks(yticks, ylabels)
     axes.yaxis.set_tick_params(labelsize=2)
@@ -467,7 +473,8 @@ def plotSurplusByState(config : cfg.AtomicPopulationPlot.PlotConfig,
 
     yticks = np.arange(0, numberAtomicStates)
     ylabels = list(map(
-        lambda atomicConfigNumber: str(conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)),
+        lambda atomicConfigNumber: str(conv.getLevelVector(
+            atomicConfigNumber, config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)),
         atomicConfigNumbers_SCFLY))
     axes.set_yticks(yticks, ylabels)
     axes.yaxis.set_tick_params(labelsize=2)
@@ -517,7 +524,7 @@ def plot_StepDiff(plotTimeSteps : list[int], config : cfg.AtomicPopulationPlot.P
 
     xlabels = np.fromiter(
         map(lambda collectionIndex: str(conv.getLevelVector(atomicConfigNumbers_FLYonPIC[collectionIndex],
-                                                            config.atomicNumber, config.numLevels)),
+                                                            config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)),
         atomicStateCollectionIndices), dtype='U20')
     axePair.set_xticks(atomicStateCollectionIndices, xlabels)
     axePair.set_ylabel("(FLYonPIC - SCFLY) relative abundance")
@@ -552,7 +559,8 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FL
     numberAtomicStates = np.shape(atomicPopulationData)[axisDict['atomicState']]
 
     chargeStates = np.fromiter(
-        map(lambda atomicConfigNumber: conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
+        map(lambda atomicConfigNumber: conv.getChargeState(atomicConfigNumber, config.openPMDReaderConfig.atomicNumber,
+                                                           config.openPMDReaderConfig.numLevels),
             atomicConfigNumbers), dtype='u1')
 
     #sum atomic states for each charge states below FLYonPIC charge state
@@ -587,7 +595,7 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FL
         z = chargeStates[i]
         line = axes.plot(timeSteps, atomicPopulationData[:, i], linewidth=1, alpha=0.5, linestyle="--",
                     color=colorChargeStates[z], label=str(
-                        conv.getLevelVector(atomicConfigNumber, config.atomicNumber, config.numLevels)))
+                        conv.getLevelVector(atomicConfigNumber, config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)))
         atomicStateLines.append(line[0])
     # plot below charge states
     for z in range(FLYonPICInitialChargeState):
@@ -652,7 +660,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
         assert(axisDict_ChargeState['timeStep'] == 0)
         assert(axisDict_ChargeState['chargeState'] == 1)
 
-        for chargeState in tqdm(range(config.atomicNumber + 1)):
+        for chargeState in tqdm(range(config.openPMDReaderConfig.atomicNumber + 1)):
             if chargeState in config.chargeStatesToPlot:
                 ### plot mean value
                 axes.plot(timeSteps_FLYonPIC, chargeStateData[:, chargeState], linewidth=1, alpha=0.5,
@@ -679,7 +687,7 @@ def plotChargeStates(config : cfg.AtomicPopulationPlot.PlotConfig,
         assert(axisDict_ChargeState['timeStep'] == 0)
         assert(axisDict_ChargeState['chargeState'] == 1)
 
-        for chargeState in tqdm(range(config.atomicNumber + 1)):
+        for chargeState in tqdm(range(config.openPMDReaderConfig.atomicNumber + 1)):
             if chargeState in config.chargeStatesToPlot:
                 axes.plot(timeSteps_SCFLY, chargeStateData[:, chargeState], linewidth=1, alpha=0.5, linestyle="--",
                         color=colorChargeStates[chargeState], label="[SCFLY] chargeState " + str(chargeState))
@@ -713,12 +721,12 @@ def plot_all(
             mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC, \
                 atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY = loadPrevious(config)
 
-        """plot_additive(config,
+        plot_additive(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)"""
-        """plot_absolute(config,
+             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
+        plot_absolute(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
-             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)"""
+             atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)
         plotChargeStates(config,
              mean, stdDev, axisDict_FLYonPIC, atomicConfigNumbers_FLYonPIC, timeSteps_FLYonPIC,
              atomicPopulationData, axisDict_SCFLY, atomicConfigNumbers_SCFLY, timeSteps_SCFLY)

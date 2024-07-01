@@ -71,7 +71,7 @@ def callFastHistogramInParallel(weights, propertyIndex, typicalWeight, numberPro
                 result[workerIdx + 1] += fastHistogram(w_, p_, typicalWeight, numberPropertyIndexValues)
 
         # sum worker results, to final accumulation
-        result[0,:] = np.sum(result[1:], axis=0)
+        result[0,:] = np.sum(result, axis=0)
         # reset worker memory to avoid double counting
         result[1:, :] = 0
 

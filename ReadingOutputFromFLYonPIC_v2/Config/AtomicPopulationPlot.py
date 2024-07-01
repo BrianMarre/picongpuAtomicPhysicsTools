@@ -20,7 +20,7 @@ class PlotConfig(pydantic.BaseModel):
     """Config object for plotting atomic populations"""
 
     #openPMD reader config
-    OpenPMDReaderConfig : OpenPMDReader.ReaderConfig
+    openPMDReaderConfig : OpenPMDReader.ReaderConfig
 
     #chargeStates to plot, empty means all
     chargeStatesToPlot : list[int]
