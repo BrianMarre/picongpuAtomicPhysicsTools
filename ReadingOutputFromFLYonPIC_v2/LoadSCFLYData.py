@@ -28,7 +28,10 @@ def loadSCFLYdata(config : cfg.AtomicPopulationPlot.PlotConfig):
     # load data
     atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = Reader.SCFLY.getSCFLY_PopulationData(
         config.SCFLYOutputFileName,
-        Reader.SCFLY.readSCFLYNames(config.SCFLYatomicStateNamingFile, config.atomicNumber, config.numLevels)[0])
+        Reader.SCFLY.readSCFLYNames(
+            config.SCFLYatomicStateNamingFile,
+            config.openPMDReaderConfig.atomicNumber,
+            config.openPMDReaderConfig.numLevels)[0])
 
     # calculate total densities
     assert((len(np.shape(atomicPopulationData)) == 2) and (axisDict['timeStep'] == 0))
@@ -38,7 +41,10 @@ def loadSCFLYdata(config : cfg.AtomicPopulationPlot.PlotConfig):
 
     # sort data according to FLYonPIC sorting
     chargeStates = np.fromiter(map(
-        lambda atomicConfigNumber : conv.getChargeState(atomicConfigNumber, config.atomicNumber, config.numLevels),
+        lambda atomicConfigNumber : conv.getChargeState(
+            atomicConfigNumber,
+            config.openPMDReaderConfig.atomicNumber,
+            config.openPMDReaderConfig.numLevels),
         atomicConfigNumbers), dtype = 'u1')
     sortedIndices = np.lexsort((atomicConfigNumbers, chargeStates))
     del chargeStates
