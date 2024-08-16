@@ -19,35 +19,12 @@ from . import Config as cfg
 
 @typeguard.typechecked
 def loadFLYonPICData(config : cfg.OpenPMDReader.ReaderConfig):
-    if(config.FLYonPICAtomicStateInputDataFile == ""):
-        # no FLYonPIC atomic input data
-        return None, None, None, None, None
-    if(len(config.FLYonPICOutputFileNames) == 0):
-        # no output fileNames
-        return None, None, None, None, None
-
-    # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
-    atomicConfigNumbers = np.loadtxt(
-        config.FLYonPICAtomicStateInputDataFile,
-        dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
-
-    numberSamples = len(config.FLYonPICOutputFileNames)
-    numberAtomicStates = np.shape(atomicConfigNumbers)[0]
 
     # load in FLYonPIC data
     sampleListAtomicPopulationData = []
     sampleListTimeSteps = []
-    for fileName in config.FLYonPICOutputFileNames:
-        sampleAccumulatedWeights, sampleTimeSteps, typicalWeight = Reader.openPMD.getAtomicPopulationData(
-            config.FLYonPICBasePath + fileName,
-            config.speciesName,
-            numberAtomicStates,
-            config.numberWorkers,
-            config.chunkSize)
-
-        sampleListAtomicPopulationData.append(sampleAccumulatedWeights)
-        sampleListTimeSteps.append(sampleTimeSteps)
-        del typicalWeight
+    for fileName in self.FLYonPICOutputFileNames:
+        # read in data
 
     numberIterations = np.shape(sampleListTimeSteps[0])[0]
 

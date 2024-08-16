@@ -10,13 +10,13 @@ License: GPLv3+
 """
 
 # configs for plotting
-from . import Config
+from . import config
 
 # generating SCFLY setups
 from . import SCFlyTools
 
 # file readers
-from . import Reader
+from . import reader
 
 # helpers
 from . import ChargeStateColors
@@ -38,9 +38,9 @@ from . import PlotSummarySCFLYScan
 
 
 __all__ = [
-    "Config",
+    "config",
     "SCFlyTools",
-    "Reader",
+    "reader",
     "ChargeStateColors",
     "ScanSCFLY",
     "LoadFLYonPICData",

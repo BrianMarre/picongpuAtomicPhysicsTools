@@ -20,11 +20,6 @@ from . import Config as cfg
 
 @typeguard.typechecked
 def loadSCFLYdata(config : cfg.AtomicPopulationPlot.PlotConfig):
-    if(config.SCFLYatomicStateNamingFile == ""):
-        return None, None, None, None
-    if(config.SCFLYOutputFileName == ""):
-        return None, None, None, None
-
     # load data
     atomicPopulationData, axisDict, atomicConfigNumbers, timeSteps = Reader.SCFLY.getSCFLY_PopulationData(
         config.SCFLYOutputFileName,

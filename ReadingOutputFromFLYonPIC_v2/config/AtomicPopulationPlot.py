@@ -25,12 +25,6 @@ class PlotConfig(pydantic.BaseModel):
     #chargeStates to plot, empty means all
     chargeStatesToPlot : list[int]
 
-    # path to atomciStateNaming.input file, contains for each SCFLY state its corresponding occupation number vector
-    SCFLYatomicStateNamingFile : str
-
-    # path of SCFLY output file
-    SCFLYOutputFileName : str
-
     # name of states to plot
     numberStatesToPlot : int
     # colormap to use

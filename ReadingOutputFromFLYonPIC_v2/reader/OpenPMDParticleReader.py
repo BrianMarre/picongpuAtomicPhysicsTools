@@ -8,6 +8,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public 
 Authors: Brian Edward Marre
 License: GPLv3+
 """
+
+from . import StateDistributionReader
+
 import openpmd_api as opmd
 
 import numba
@@ -15,6 +18,7 @@ import numpy as np
 from tqdm import tqdm
 
 import typeguard
+import enum
 
 @numba.jit(fastmath=True, nopython=True, cache=True)
 def fastHistogram(weights, propertyIndices, typicalWeight, numberPropertyIndexValues):
@@ -105,11 +109,7 @@ def getPropertyIndexHistogram(
 
     print(fileName + " iteration:")
     for i, stepIdx in tqdm(enumerate(series.iterations)):
-
-        # get subGroup for simulation iteration
         step = series.iterations[stepIdx]
-
-        # get subGroup of specific species
         species = step.particles[speciesName]
 
         # get recordComponents
@@ -142,54 +142,56 @@ def getPropertyIndexHistogram(
 
     return accumulatedWeight, timeSteps, typicalWeight
 
-@typeguard.typechecked
-def getAtomicPopulationData(
-        fileName : str,
-        speciesName : str,
-        numberAtomicStates : int,
-        numberWorkers : int,
-        chunkSize : int):
-    """ returns the atomic state data of an openPMD particle output of a simulation
-
-        @param fileName absolute/relative path of output
-        @param speciesName string identifier of species
-        @param numberAtomicStates number of unique atomic states in output
-        @param numberWorkers number of independent threads to use
-        @param chunkSize number of particles to try to to pass each worker in a chunk
-
-        @returns np.array((numberTimeSteps, numberAtomicStates))= accumulatedWeight/scalingFactor, np.array(numberIterations)= time, scalingFactor
-    """
-
-    return getPropertyIndexHistogram(
-        fileName,
-        speciesName,
-        "atomicStateCollectionIndex",
-        numberAtomicStates,
-        numberWorkers,
-        chunkSize)
+class Property(enum.Enum):
+    atomicState = 0
+    chargeState = 1
 
 @typeguard.typechecked
-def getBoundElectronsData(
-    fileName : str,
-    speciesName : str,
-    numberChargeStates : int,
-    numberWorkers : int,
-    chunkSize : int):
-    """
-        returns the boundElectrons data of an atomic particle output of a simulation
+class OpenPMDParticleReader(StateDistributionReader):
+    """read in atomic state distribution from openPMD particle dump"""
 
-        @param fileName absolute/relative path of output
-        @param speciesName string identifier of species
-        @param numberAtomicStates number of unique charge states in output
-        @param numberWorkers number of independent threads to use
-        @param chunkSize number of particles to try to to pass each worker in a chunk
+    speciesName : str
+    # name of ion species in openPMD output
 
-        @returns np.array((numberTimeSteps, numberChargeStates))= accumulatedWeight/scalingFactor, np.array(numberIterations)= time, scalingFactor
-    """
-    return getPropertyIndexHistogram(
-        fileName,
-        speciesName,
-        "boundElectrons",
-        numberChargeStates,
-        numberWorkers,
-        chunkSize)
+    propertyToRead : Property = Property.atomicState
+    # which property to read in, atomic state or charge state
+
+    numberWorkers : int
+    # number of threads to use for reading
+    chunkSize : int
+    # number of particles to pass to each thread
+
+    FLYonPICAtomicStatesInputFileName : str
+    # path of file FLYonPIC atomic state input data file, used for converting collection Index to configNumber
+    FLYonPICOpenPMDOutputFileName : str
+    # openPMD output file name, a regex describing openPMD naming of openPMD output files, see openPMD-api for details
+
+    _propertyDict : dict[Property, str] = {Property.atomicState : "atomicStateCollectionIndex", Property.chargeState : "boundElectrons"}
+    # map from Property to particle property name
+
+    def read(self) -> tuple[npt.NDArray[np.float64], tuple[npt.NDArray[np.float64], npt.NDArray[np.uint64]], dict[str, int], tuple[np.float64]]:
+        """see AtomicStateDistributionReader.py for documentation"""
+        if(self.FLYonPICAtomicStatesInputFileName == ""):
+            # no FLYonPIC atomic input data file
+            raise ValueError("FLYonPIC atomic data input file required")
+        if(self.FLYonPICOpenPMDOutputFileName == ""):
+            # no simulation output file regex
+            raise ValueError("FLYonPIC output file required")
+
+        # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
+        atomicConfigNumbers = np.loadtxt(
+            self.FLYonPICAtomicStatesInputFileName,
+            dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
+
+        numberAtomicStates = np.shape(atomicConfigNumbers)[0]
+
+        accumulatedWeights, timeSteps, typicalWeight =
+        getPropertyIndexHistogram(
+            self.FLYonPICOpenPMDOutputFileName,
+            self.speciesName,
+            self._propertyDict[self.propertyToRead],
+            numberAtomicStates,
+            self.numberWorkers,
+            self.chunkSize)
+
+        return accumulatedWeight, (timeSteps, atomicConfigNumber), {"timeStep" : 0, "atomicState" : 1}, (typicalWeight,)
