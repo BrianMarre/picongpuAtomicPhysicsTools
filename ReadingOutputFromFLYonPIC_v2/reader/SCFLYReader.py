@@ -164,8 +164,8 @@ class SCFLYReader(StateDistributionReader):
     def readInDataForEachUniqueBlockSize(self, uniqueBlockSizes : npt.NDArray[np.uint32], stateName_regex : str) -> tuple[
             dict[np.uint32, npt.NDArray],
             dict[np.uint32, npt.NDArray]
-            dict[np.uint32, list[str]]
-            ]:
+            dict[np.uint32, list[str]],
+            tuple[np.float64]]:
         """read in SCFLY output file for each unique block size"""
 
         populationDataByBlockSize = {}
@@ -251,7 +251,7 @@ class SCFLYReader(StateDistributionReader):
                         blockIndex[blockSize]*numberNamedStates:(blockIndex[blockSize]+1)*numberNamedStates][entry])
                 timeData[start + j] = timeDataByBlockSize[blockSize][blockIndex[blockSize]][entry]
 
-        return atomicStatePopulationData, timeData, atomicConfigNumbers, {'timeStep':0, 'atomicState':1}
+        return atomicStatePopulationData, timeData, atomicConfigNumbers, {'timeStep':0, 'atomicState':1}, (np.float64(1.0),)
 
     # @todo
     @typeguard.typechecked

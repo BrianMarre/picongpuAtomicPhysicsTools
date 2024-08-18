@@ -9,13 +9,13 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-import typeguard
+import pydantic
+import tpyeguard
 
-import numpy as np
-import math
-
-from . import Reader
-from . import Config as cfg
+from . import reader
 
 @typeguard.typechecked
-
+class Plotter[(pydantic.BaseModel):
+    readerList : list
+    def plot(self) -> None:
+        """create plot from read by entries of readerList"""

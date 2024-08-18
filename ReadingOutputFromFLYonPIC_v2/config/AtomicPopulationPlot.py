@@ -19,24 +19,5 @@ import typing
 class PlotConfig(pydantic.BaseModel):
     """Config object for plotting atomic populations"""
 
-    #openPMD reader config
-    openPMDReaderConfig : OpenPMDReader.ReaderConfig
-
-    #chargeStates to plot, empty means all
-    chargeStatesToPlot : list[int]
-
-    # name of states to plot
-    numberStatesToPlot : int
-    # colormap to use
-    colorMap : typing.Any
-    # number of colors in colormap
-    numColorsInColorMap : int
-
-    # path for storing plots
-    figureStoragePath : str
-
-    # descriptive name of data set, used for plot labeling and storage naming, must be unique
-    dataName : str
-
     # True: read form raw simulation output, False: load previously processed data from processedDataStoragePath
     loadRaw : bool

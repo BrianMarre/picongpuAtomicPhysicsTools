@@ -35,12 +35,13 @@ from . import PlotAtomicPopulations
 from . import PlotTimingData
 from . import PlotSummarySCFLYScan
 
-
+from . import Plotter
 
 __all__ = [
     "config",
     "SCFlyTools",
     "reader",
+    "Plotter",
     "ChargeStateColors",
     "ScanSCFLY",
     "LoadFLYonPICData",
