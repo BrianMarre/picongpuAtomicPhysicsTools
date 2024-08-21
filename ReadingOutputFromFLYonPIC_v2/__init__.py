@@ -9,46 +9,21 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-# configs for plotting
-from . import config
-
 # generating SCFLY setups
 from . import SCFlyTools
 
 # file readers
 from . import reader
 
-# helpers
-from . import ChargeStateColors
-
-# scan with SCFLY
-from . import ScanSCFLY
-
-# processing routines
-from . import LoadFLYonPICData
-from . import LoadSCFLYData
-from . import LoadChargeStateData
-from . import ReduceToPerChargeState
-
-#plotting libraries
-from . import PlotAtomicPopulations
-from . import PlotTimingData
-from . import PlotSummarySCFLYScan
-
-from . import Plotter
+from .Plotter import Plotter
+from .AtomicStatePlotter import AtomicStatePlotter
+from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
+from .SpeciesDescriptor import SpeciesDescriptor
 
 __all__ = [
-    "config",
     "SCFlyTools",
+    "SpeciesDescriptor",
     "reader",
     "Plotter",
-    "ChargeStateColors",
-    "ScanSCFLY",
-    "LoadFLYonPICData",
-    "LoadSCFLYData",
-    "LoadChargeStateData",
-    "ReduceToPerChargeState",
-    "PlotAtomicPopulations",
-    "PlotTimingData",
-    "PlotSummarySCFLYScan"]
-
+    "AtomicStatePlotter",
+    "AtomicStateAbsolutePlotter"]

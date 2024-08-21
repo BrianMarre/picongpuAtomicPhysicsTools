@@ -10,12 +10,17 @@ License: GPLv3+
 """
 
 import pydantic
-import tpyeguard
+import typeguard
 
 from . import reader
 
 @typeguard.typechecked
-class Plotter[(pydantic.BaseModel):
+class Plotter(pydantic.BaseModel):
+    # collection of readers each representing one data source
     readerList : list
+
+    plotName : str
+
     def plot(self) -> None:
         """create plot from read by entries of readerList"""
+        raise NotImplementedError("abstract interface only")

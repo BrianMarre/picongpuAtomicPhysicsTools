@@ -9,76 +9,56 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-import json
-
-from . import ChargeStateColors
-
-from . import ReduceToPerChargeState
-
-import matplotlib.pyplot as plt
-import matplotlib.colors as color
-import matplotlib.scale as scale
-
-from labellines import labelLines
-
-@typeguard.typechecked
-def plot_all(
-    tasks_general : list[cfg.AtomicPopulationPlot.PlotConfig],
-    tasks_diff : list[cfg.AtomicPopulationPlot.PlotConfig],
-    tasks_recombination : list[cfg.AtomicPopulationPlot.PlotConfig],
-    FLYonPICInitialChargeState : int = 0):
-
 from . import Plotter
 from . import reader
+from .SpeciesDescriptor import SpeciesDescriptor
 
 import numpy as np
-import numyp.typing as npt
+import numpy.typing as npt
 
 import math
-import logging
 import typeguard
 import pydantic
-
-class SpeciesDescriptors(pydantic.BaseModel):
-    # atomic number of ion species
-    atomicNumber : int
-    # maximum principal quantum number used
-    numLevels : int
+import typing
 
 @typeguard.typechecked
 class AtomicStatePlotter(Plotter):
-    # single reader will be plotted directly, list readers will be plotted as mean and standard deviation of reader results
+    # single reader will be plotted directly, list of readers will be plotted as mean and standard deviation of reader data
     readerList : list[reader.StateDistributionReader | list[reader.StateDistributionReader]]
 
-    speciesDescriptorList : list[SpeciesDescriptors]
+    # one species descriptor for each readerList entry
+    speciesDescriptorList : list[SpeciesDescriptor]
+
+    # description of linestyle descriptors to use in plots for each reader
+    plotLineStyles : list[str]
 
     # chargeStates to plot
     chargeStatesToPlot : list[int]
 
+    # minimum relative
+    minimumRelativeAbundance : float = 1.e-5
+
     # colormap to use
     colorMap : typing.Any
     # number of colors in colormap
-    numColorsInColorMap : int
+    numberColorsInColorMap : int
 
     # path for storing plots
     figureStoragePath : str
 
     # descriptive name of data set, used for plot labeling and storage naming, must be unique
-    dataName : str
+    plotName : str
 
-    # minimum population for inclusion in plot
-    minimumPopulation : float
-
-    def checkSamplesConsitent[T](self, sampleList : list[T]) -> T:
+    def checkSamplesConsitent(self, sampleList : list) -> typing.Any:
         # check all samples element wise equal
-        if len(smapleList) > 1:
+        if len(sampleList) > 1:
             for sample in sampleList[1:]:
-                if np.any(sample != timeStepsSamples[0]):
+                if np.any(sample != sampleList[0]):
                     raise RuntimeError("samples inconsistent")
             return sample
         return sampleList[0]
 
-    def _readSamples(self, readerList : list[reader.StateDistributionReader]):
+    def _readSamples(self, readerListEntry : list[reader.StateDistributionReader]):
         # load  data
         populationDataSamples : list[npt.NDArray[np.float64]] = []
         timeStepsSamples : list[npt.NDArray[np.float64]] = []
@@ -86,8 +66,8 @@ class AtomicStatePlotter(Plotter):
         axisDictSamples : list[dict[str, int]] = []
         scalingFactorSamples : list[np.float64] = []
 
-        for reader in readerListEntry:
-            tuple_sample = reader.read()
+        for readerInList in readerListEntry:
+            tuple_sample = readerInList.read()
             populationDataSamples.append(tuple_sample[0])
             timeStepsSamples.append(tuple_sample[1][0])
             atomicStatesSamples.append(tuple_sample[1][1])
@@ -96,7 +76,7 @@ class AtomicStatePlotter(Plotter):
 
         return populationDataSamples, timeStepsSamples, atomicStatesSamples, axisDictSamples, scalingFactorSamples
 
-    def calulateMeanAndStdDev(self, readerList : list[reader.StateDistributionReader]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64]]:
+    def calculateMeanAndStdDev(self, readerList : list[reader.StateDistributionReader]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64]]:
         populationDataSamples, timeStepsSamples, atomicStatesSamples, axisDictSamples, scalingFactorSamples = self._readSamples(readerList)
 
         timeSteps = self.checkSamplesConsitent(timeStepsSamples)
@@ -107,20 +87,20 @@ class AtomicStatePlotter(Plotter):
         del axisDictSamples
 
         numberSamples = len(readerList)
-        numberAtomicStates = np.shape(atomicState)[0]
-        numberIterations = np.shape[timeSteps][0]
+        numberAtomicStates = np.shape(atomicStates)[0]
+        numberIterations = np.shape(timeSteps)[0]
 
         # throw data into common to array, must be done here since number of samples not previously known
         data = np.empty((numberSamples, numberIterations, numberAtomicStates), dtype='f8')
-        for i, sample in enumerate(populationDataSamples):
-            data[i] = sample
-        del sampleListAtomicPopulationData
+        for i, sampleData in enumerate(populationDataSamples):
+            data[i] = sampleData
+        del sampleData
 
         # calculate total density
         totalDensity = np.empty((numberSamples, numberIterations), dtype='f8')
         for sample in range(numberSamples):
             for iteration in range(numberIterations):
-                totalDensity[sample,iteration] = math.fsum(data[i, j])
+                totalDensity[sample,iteration] = math.fsum(data[sample, iteration])
 
         # convert to relative abundances -> may disregard scaling factor
         data = data / totalDensity[:, :, np.newaxis]
@@ -130,7 +110,7 @@ class AtomicStatePlotter(Plotter):
 
         if numberSamples > 1 :
             stdDev = np.std(data, axis = 0, ddof = 1)
-        else
+        else:
             stdDev = np.zeros((numberIterations, numberAtomicStates))
 
         return mean, stdDev, axisDict, timeSteps, atomicStates
@@ -145,15 +125,16 @@ class AtomicStatePlotter(Plotter):
             if isinstance(readerListEntry, list):
                 data.append(self.calculateMeanAndStdDev(readerListEntry))
             else:
-                data.append([readerListEntry])
+                data.append(self.calculateMeanAndStdDev([readerListEntry]))
+
 
         return data
 
     def getChargeStateColors(self, additionalIndices : list[int] = []):
         """@return dictionary assigning one color to each charge state"""
-        colors = iter([self.colorMap(i) for i in range(self.numColorsInColorMap)])
+        colors = iter([self.colorMap(i) for i in range(self.numberColorsInColorMap)])
 
-        if self.numColorsInColorMap < (len(additionalIndices) + len(self.chargeStatesToPlot)):
+        if self.numberColorsInColorMap < (len(additionalIndices) + len(self.chargeStatesToPlot)):
             print("Warning: number of colors is less than requested unique lines colors, some colors will repeat!")
 
         ## assign all chargeStates a color
@@ -162,14 +143,14 @@ class AtomicStatePlotter(Plotter):
             try:
                 colorChargeStates[z] = next(colors)
             except StopIteration:
-                colors = iter([self.colorMap(i) for i in range(self.numColorsInColorMap)])
+                colors = iter([self.colorMap(i) for i in range(self.numberColorsInColorMap)])
                 colorChargeStates[z] = next(colors)
 
         for index in additionalIndices:
             try:
                 colorChargeStates[index] = next(colors)
             except StopIteration:
-                colors = iter([self.colorMap(i) for i in range(self.numColorsInColorMap)])
+                colors = iter([self.colorMap(i) for i in range(self.numberColorsInColorMap)])
                 colorChargeStates[index] = next(colors)
 
         return colorChargeStates

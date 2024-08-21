@@ -9,12 +9,13 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-from . import Reader
-from . import StateDistributionReader
-from . import OpenPMDParticleReader
-from . import OpenPMDBinningReader
-from . import SCFLYReader
-from . import TimingDataReader
+from .Reader import Reader
+from .StateDistributionReader import StateDistributionReader
+from .OpenPMDParticleReader import OpenPMDParticleReader
+
+from .OpenPMDBinningReader import OpenPMDBinningReader
+from .SCFLYReader import SCFLYReader
+from .TimingDataReader import TimingDataReader
 
 __all__ = [
     "Reader",

@@ -11,19 +11,25 @@ License: GPLv3+
 
 from . import StateDistributionReader
 
+import numpy as np
+import numpy.typing as npt
+import typeguard
+import openpmd_api as opmd
+
+@typeguard.typechecked
 class OpenPMDBinningReader(StateDistributionReader):
     """read atomic state distribution PIConGPU binning output"""
 
     binnerOutputFileName : str
     # openPMD output file name, a regex describing openPMD naming of openPMD output files, see openPMD-api for details
 
-    FLYonPICAtomicStatesInputFileName : str
+    FLYonPICAtomicStatesInputDataFileName : str
     # path of file FLYonPIC atomic state input data file, used for converting collection Index to configNumber
 
     def loadAtomicStateData(self) -> npt.NDArray[np.uint64]:
         # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
         atomicConfigNumbers = np.loadtxt(
-            self.FLYonPICAtomicStatesInputFileName,
+            self.FLYonPICAtomicStatesInputDataFileName,
             dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
         return atomicConfigNumbers
 
@@ -57,17 +63,25 @@ class OpenPMDBinningReader(StateDistributionReader):
         timeSteps = np.empty(numberIterations * numberTimeStepsPerDump, dtype="f8")
 
         # iterations
-        for i, stepIdx in tqdm(enumerate(listIterations)):
+        for i, stepIdx in enumerate(listIterations):
             step = series.iterations[stepIdx]
 
-            binningRecordComponent = step.meshes["Binning"][opmd.Mesh_Record_Component.SCALAR]
+            binningMesh = step.meshes["Binning"]
+            binningRecordComponent = binningMesh[opmd.Mesh_Record_Component.SCALAR]
 
             # @todo implement chunking, BrianMarre, 2024
             binning_data_step = binningRecordComponent.load_chunk()
             series.flush()
 
-            atomicStateDistributionData[i*(numberAtomicStatesInDump):i*(numberAtomicStatesInDump+1)] = binning_data_step
+            accumulatedWeights[i*numberTimeStepsPerDump:(i+1)*numberTimeStepsPerDump] = binning_data_step
 
-        #scalingFactor = step.meshes["Binning"].get_attribute("weightScalingFactor")
+            timeDumpStep = step.get_attribute("time")
+            diffTimeBinToDumpStep = -(numberTimeStepsPerDump - np.array(binningMesh.get_attribute("time_axis_bin_edges")[1:]))
 
-        return accumulatedWeights, (timeSteps, atomicConfigNumbers), {"timeStep":0, "atomicState":1}, (1.0,)
+            timeSteps[i*numberTimeStepsPerDump:(i+1)*numberTimeStepsPerDump] = (
+                (timeDumpStep + diffTimeBinToDumpStep) * step.get_attribute("timeUnitSI"))
+
+
+        scalingFactor = binningMesh.get_attribute("weightScalingFactor")
+
+        return accumulatedWeights, (timeSteps, atomicConfigNumbers), {"timeStep":0, "atomicState":1}, (np.float64(1.0),)

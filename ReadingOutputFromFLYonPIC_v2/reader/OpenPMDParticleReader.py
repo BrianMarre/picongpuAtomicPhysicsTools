@@ -15,10 +15,11 @@ import openpmd_api as opmd
 
 import numba
 import numpy as np
-from tqdm import tqdm
+import numpy.typing as npt
+import tqdm
+import enum
 
 import typeguard
-import enum
 
 @numba.jit(fastmath=True, nopython=True, cache=True)
 def fastHistogram(weights, propertyIndices, typicalWeight, numberPropertyIndexValues):
@@ -108,7 +109,7 @@ def getPropertyIndexHistogram(
     timeSteps = np.empty(numberIterations, dtype='f8')
 
     print(fileName + " iteration:")
-    for i, stepIdx in tqdm(enumerate(series.iterations)):
+    for i, stepIdx in tqdm.tqdm(enumerate(series.iterations)):
         step = series.iterations[stepIdx]
         species = step.particles[speciesName]
 
@@ -185,8 +186,7 @@ class OpenPMDParticleReader(StateDistributionReader):
 
         numberAtomicStates = np.shape(atomicConfigNumbers)[0]
 
-        accumulatedWeights, timeSteps, typicalWeight =
-        getPropertyIndexHistogram(
+        accumulatedWeights, timeSteps, typicalWeight = getPropertyIndexHistogram(
             self.FLYonPICOpenPMDOutputFileName,
             self.speciesName,
             self._propertyDict[self.propertyToRead],

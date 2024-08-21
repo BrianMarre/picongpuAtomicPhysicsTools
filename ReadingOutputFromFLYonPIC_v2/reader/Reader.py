@@ -17,6 +17,8 @@ import numpy.typing as npt
 
 @typeguard.typechecked
 class Reader(pydantic.BaseModel):
+    dataSetName : str
+
     def read(self) -> tuple[npt.NDArray, list[npt.NDArray], dict[str, int], typing.Any]:
         """
         read in data from source
