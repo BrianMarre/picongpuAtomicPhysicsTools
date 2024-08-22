@@ -31,15 +31,9 @@ class AtomicStatePlotter(Plotter):
     speciesDescriptorList : list[SpeciesDescriptor]
 
     # colormap to use
-    colorMap : typing.Any
+    colorMap : typing.Any = None
     # number of colors in colormap
-    numberColorsInColorMap : int
-
-    # path for storing plots
-    figureStoragePath : str
-
-    # descriptive name of data set, used for plot labeling and storage naming, must be unique
-    plotName : str
+    numberColorsInColorMap : int = 0
 
     def checkSamplesConsistent(self, sampleList : list) -> typing.Any:
         # check all samples element wise equal
@@ -135,6 +129,10 @@ class AtomicStatePlotter(Plotter):
 
     def getChargeStateColors(self, additionalIndices : list[int] = []):
         """@return dictionary assigning one color to each charge state"""
+
+        if (self.colorMap is None) or (self.numberColorsInColorMap < 1):
+            raise ValueError(f"{self} must specify a colorMap")
+
         colors = iter([self.colorMap(i) for i in range(self.numberColorsInColorMap)])
 
         if self.numberColorsInColorMap < (len(additionalIndices) + len(self.chargeStatesToPlot)):

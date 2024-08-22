@@ -13,6 +13,9 @@ from .SCFlyTools import AtomicConfigNumberConversion as conv
 from .AtomicStateDiffPlotter import AtomicStateDiffPlotter
 
 import typeguard
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.scale as scale
 
 @typeguard.typechecked
 class AtomicStateDiffLineoutPlotter(AtomicStateDiffPlotter):
@@ -27,7 +30,7 @@ class AtomicStateDiffLineoutPlotter(AtomicStateDiffPlotter):
 
     def plot(self) -> None:
         """plot difference lineout of (sample - reference) for all atomic state for a set of time steps"""
-        diff, timeSteps, atomicStates, timeSteps, axisDict, dataSetNameSample, dataSetNameReference, speciesDescriptor = self.getDiff()
+        diff, timeSteps, atomicStates, axisDict, dataSetNameSample, dataSetNameReference, speciesDescriptor = self.getDiff()
 
         print(f"plotting lineouts of {dataSetNameSample} vs {dataSetNameReference}...")
 
@@ -40,28 +43,30 @@ class AtomicStateDiffLineoutPlotter(AtomicStateDiffPlotter):
 
         maxAbsDiff = np.max(np.abs(np.take(diff, self.lineoutSteps, axisDict["atomicState"]))) * 1.1
 
+        atomicStateCollectionIndices = np.arange(numberAtomicStates)
+
         # plot all time steps
         for i, stepIdx in enumerate(self.lineoutSteps):
             axePair = axes[i]
             axePair.set_title("step: " + str(stepIdx))
-            axePair.plot(atomicStateCollectionIndices, diff[stepIdx], linestyle="-", marker="x")
+            axePair.plot(atomicStateCollectionIndices, np.take(diff, stepIdx, axisDict["timeStep"]), linestyle="-", marker="x")
             axePair.set_xticks([])
             axePair.set_xlim((0, numberAtomicStates))
             axePair.set_ylim((-maxAbsDiff, maxAbsDiff))
             axePair.set_yscale(scale.SymmetricalLogScale(axePair.yaxis, linthresh=self.linthresh))
 
         xlabels = np.fromiter(
-            map(lambda collectionIndex: str(conv.getLevelVector(atomicStates[collectionIndex],
+            map(lambda atomicConfigNumber: str(conv.getLevelVector(atomicConfigNumber,
                                                                 speciesDescriptor.atomicNumber,
-                                                                speciesDescriptor.numLevels)),
-            atomicStateCollectionIndices), dtype='U20')
+                                                                speciesDescriptor.numberLevels)),
+            atomicStates), dtype='U20')
         axePair.set_xticks(atomicStateCollectionIndices, xlabels)
         axePair.set_ylabel(f"({dataSetNameSample} - {dataSetNameReference}) relative abundance")
         axePair.set_xlabel("atomic states")
         plt.setp(axePair.get_xticklabels(), rotation=90, ha="right", rotation_mode="anchor")
         axePair.xaxis.set_tick_params(labelsize=2)
 
-        print("saving ...")
+        print("\t saving ...")
         plt.tight_layout()
-        plt.savefig(config.figureStoragePath + "AtomicPopulation_stepDiff_" + config.dataName, bbox_extra_artists=(title,))
+        plt.savefig(self.figureStoragePath + "AtomicState_DiffLineout_" + self.plotName, bbox_extra_artists=(title,))
         plt.close(figure)

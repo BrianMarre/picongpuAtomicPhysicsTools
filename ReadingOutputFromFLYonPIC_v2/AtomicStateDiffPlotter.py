@@ -79,7 +79,6 @@ class AtomicStateDiffPlotter(AtomicStatePlotter):
         del chargeStates_sample, chargeStates_reference
         del data
 
-        print(conv.getLevelVector(293, self.getSpeciesDescriptor().atomicNumber, self.getSpeciesDescriptor().numberLevels))
         atomicStates = self.checkSamplesConsistent([atomicStates_sample, atomicStates_reference])
         del atomicStates_sample, atomicStates_reference
 

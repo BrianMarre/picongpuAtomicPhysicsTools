@@ -13,16 +13,26 @@ from .SCFlyTools import AtomicConfigNumberConversion as conv
 from .AtomicStateDiffPlotter import AtomicStateDiffPlotter
 
 import typeguard
+import numpy as np
+
+import matplotlib.pyplot as plt
+import matplotlib.colors as color
 
 @typeguard.typechecked
 class AtomicStateDiffOverviewPlotter(AtomicStateDiffPlotter):
     # show every periodOfTimeTicks' on the time axis
     periodOfTimeTicks : int = 5
 
+    def check(self) -> None:
+        if self.colorMap is None:
+            raise ValueError(f"{self} must specify a colorMap")
+
     def plot(self) -> None:
         """plot difference (sample - reference) for each atomic state and each step"""
 
-        diff, timeSteps, atomicStates, timeSteps, axisDict, dataSetNameSample, dataSetNameReference, speciesDescriptor = self.getDiff()
+        self.check()
+
+        diff, timeSteps, atomicStates, axisDict, dataSetNameSample, dataSetNameReference, speciesDescriptor = self.getDiff()
 
         print(f"plotting overview of {dataSetNameSample} vs {dataSetNameReference}...")
 
@@ -43,7 +53,7 @@ class AtomicStateDiffOverviewPlotter(AtomicStateDiffPlotter):
         yticks = np.arange(0, numberAtomicStates)
         ylabels = list(map(
             lambda atomicConfigNumber: str(conv.getLevelVector(
-                atomicConfigNumber, speciesDescriptor.atomicNumber, speciesDescriptor.numLevels)),
+                atomicConfigNumber, speciesDescriptor.atomicNumber, speciesDescriptor.numberLevels)),
             atomicStates))
         axes.set_yticks(yticks, ylabels)
         axes.yaxis.set_tick_params(labelsize=2)
@@ -54,5 +64,6 @@ class AtomicStateDiffOverviewPlotter(AtomicStateDiffPlotter):
         plt.pcolormesh(X, Y, diff, cmap=self.colorMap, norm=color.SymLogNorm(linthresh=1e-8),)
         plt.colorbar()
         figure.tight_layout()
+        print("\t saving ...")
         plt.savefig(f"{self.figureStoragePath}/AtomicPopulation_diff_{self.plotName}")
         plt.close(figure)

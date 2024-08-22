@@ -50,6 +50,7 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter):
         axes.set_ylim((self.minimumRelativeAbundance, 1.))
 
         maxTime = 0
+        print("plotting atomic states absolute ...")
 
         for entry, readerListEntry, linestyle in zip(data, self.readerList, self.plotLineStyles):
             if isinstance(readerListEntry, list):
@@ -60,7 +61,7 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter):
             else:
                 reader = readerListEntry
 
-            print(f"plotting {reader.dataSetName} ...")
+            print(f"\t plotting {reader.dataSetName}")
 
             mean, stdDev, axisDict, timeSteps, atomicStates, chargeStates = entry
 
@@ -115,7 +116,7 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter):
         uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
         lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
 
-        print("saving...")
+        print("\t saving...")
         plt.savefig(f"{self.figureStoragePath}/AbsoluteAbundance_{self.plotName}",
                     bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.close(figure)
