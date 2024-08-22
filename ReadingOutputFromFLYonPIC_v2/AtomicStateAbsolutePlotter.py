@@ -18,10 +18,21 @@ import numpy as np
 
 @typeguard.typechecked
 class AtomicStateAbsolutePlotter(AtomicStatePlotter):
-    axisScale : str = ""
+    # scale to use on relative abundance axis, set to empty string to get linear scale
+    axisScale : str = "log"
+
+    # description of linestyle descriptors to use in plots for each reader
+    plotLineStyles : list[str]
+
+    # minimum relative
+    minimumRelativeAbundance : float = 1.e-5
+
+    # chargeStates to plot
+    chargeStatesToPlot : list[int]
 
     def plot(self) -> None:
-        """plot atomic populations on logarithmic scale"""
+        """plot absolute atomic populations"""
+
         colorChargeStates = self.getChargeStateColors()
 
         data = self.readData()

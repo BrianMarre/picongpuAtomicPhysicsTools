@@ -30,15 +30,6 @@ class AtomicStatePlotter(Plotter):
     # one species descriptor for each readerList entry
     speciesDescriptorList : list[SpeciesDescriptor]
 
-    # description of linestyle descriptors to use in plots for each reader
-    plotLineStyles : list[str]
-
-    # chargeStates to plot
-    chargeStatesToPlot : list[int]
-
-    # minimum relative
-    minimumRelativeAbundance : float = 1.e-5
-
     # colormap to use
     colorMap : typing.Any
     # number of colors in colormap
@@ -50,7 +41,7 @@ class AtomicStatePlotter(Plotter):
     # descriptive name of data set, used for plot labeling and storage naming, must be unique
     plotName : str
 
-    def checkSamplesConsitent(self, sampleList : list) -> typing.Any:
+    def checkSamplesConsistent(self, sampleList : list) -> typing.Any:
         # check all samples element wise equal
         if len(sampleList) > 1:
             for sample in sampleList[1:]:
@@ -77,16 +68,16 @@ class AtomicStatePlotter(Plotter):
 
         return populationDataSamples, timeStepsSamples, atomicStatesSamples, axisDictSamples, scalingFactorSamples
 
-    def calculateMeanAndStdDev(
+    def calculateMeanAndStdDevAbundance(
             self,
             speciesDescriptor : SpeciesDescriptor,
             readerList : list[reader.StateDistributionReader]
         ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64], npt.NDArray[np.uint8]]:
         populationDataSamples, timeStepsSamples, atomicStatesSamples, axisDictSamples, scalingFactorSamples = self._readSamples(readerList)
 
-        timeSteps = self.checkSamplesConsitent(timeStepsSamples)
-        atomicStates = self.checkSamplesConsitent(atomicStatesSamples)
-        axisDict = self.checkSamplesConsitent(axisDictSamples)
+        timeSteps = self.checkSamplesConsistent(timeStepsSamples)
+        atomicStates = self.checkSamplesConsistent(atomicStatesSamples)
+        axisDict = self.checkSamplesConsistent(axisDictSamples)
         del timeStepsSamples
         del atomicStatesSamples
         del axisDictSamples
@@ -128,6 +119,7 @@ class AtomicStatePlotter(Plotter):
         return mean, stdDev, axisDict, timeSteps, atomicStates, chargeStates
 
     def readData(self) -> list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64], npt.NDArray[np.uint8]]]:
+
         if len(self.readerList) <= 0:
             raise ValueError("need at least one reader to be able to plot something")
 
@@ -135,9 +127,9 @@ class AtomicStatePlotter(Plotter):
 
         for readerListEntry, speciesDescriptor in zip(self.readerList, self.speciesDescriptorList):
             if isinstance(readerListEntry, list):
-                data.append(self.calculateMeanAndStdDev(speciesDescriptor, readerListEntry))
+                data.append(self.calculateMeanAndStdDevAbundance(speciesDescriptor, readerListEntry))
             else:
-                data.append(self.calculateMeanAndStdDev(speciesDescriptor, [readerListEntry]))
+                data.append(self.calculateMeanAndStdDevAbundance(speciesDescriptor, [readerListEntry]))
 
         return data
 
@@ -167,10 +159,9 @@ class AtomicStatePlotter(Plotter):
         return colorChargeStates
 
     def plot(self) -> None:
-        """plot absolute atomic state population over time"""
+        """plot atomic state population over time"""
         raise NotImplementedError("need to be implemented by daughter classes")
 
-        # @todo rework
-        self.plotAbsolute(data)
+            # @todo rework
         self.plotChargeStates(data)
         self.plotRelativeAbundanceOverall(data)

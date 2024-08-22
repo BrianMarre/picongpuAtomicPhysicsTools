@@ -15,10 +15,16 @@ from . import SCFlyTools
 # file readers
 from . import reader
 
+# general plotter interfaces and abstract base classes
 from .Plotter import Plotter
-from .AtomicStatePlotter import AtomicStatePlotter
-from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
 from .SpeciesDescriptor import SpeciesDescriptor
+from .AtomicStatePlotter import AtomicStatePlotter
+from .AtomicStateDiffPlotter import AtomicStateDiffPlotter
+
+# concrete implementations
+from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
+from .AtomicStateDiffOverviewPlotter import AtomicStateDiffOverviewPlotter
+from .AtomicStateDiffLineoutPlotter import AtomicStateDiffLineoutPlotter
 
 __all__ = [
     "SCFlyTools",
@@ -26,4 +32,7 @@ __all__ = [
     "reader",
     "Plotter",
     "AtomicStatePlotter",
-    "AtomicStateAbsolutePlotter"]
+    "AtomicStateDiffPlotter"
+    "AtomicStateAbsolutePlotter",
+    "AtomicStateDiffOverviewPlotter",
+    "AtomicStateDiffLineoutPlotter"]

@@ -20,7 +20,9 @@ from tqdm import tqdm
 import subprocess
 
 from . import SCFlyTools
-from . import PlotAtomicPopulations as plotter
+from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
+from .SpeciesDescriptor import SpeciesDescriptor
+from . import reader
 from . import PlotSummarySCFLYScan as summary
 from . import Config as cfg
 
@@ -151,12 +153,6 @@ def runScanList(scanConfigs : list[cfg.SCFLYScan.ScanConfig],
 
         # create storage storage directory if it does not exist
         os.makedirs(scanConfig.figureStoragePath, exist_ok=True)
-
-        # optionally plot results
-        if scanConfig.plotEachSim:
-            plotConfigs = generatePlottingConfigs(scanConfig, baseConfigs)
-            initialChargeState = int(scanConfig.atomicNumber - np.sum(scanConfig.initialStateLevelVector))
-            plotEachSCFLYScan(plotConfigs, initialChargeState)
 
         if ((not plotCombined) and scanConfig.plotSummary):
             # plot for each scan separately
