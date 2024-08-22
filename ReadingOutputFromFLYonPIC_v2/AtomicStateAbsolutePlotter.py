@@ -10,7 +10,6 @@ License: GPLv3+
 """
 
 from . import AtomicStatePlotter
-from .SCFlyTools import AtomicConfigNumberConversion as conv
 
 import typeguard
 import tqdm
@@ -41,7 +40,7 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter):
 
         maxTime = 0
 
-        for entry, readerListEntry, speciesDescriptor, linestyle in zip(data, self.readerList, self.speciesDescriptorList, self.plotLineStyles):
+        for entry, readerListEntry, linestyle in zip(data, self.readerList, self.plotLineStyles):
             if isinstance(readerListEntry, list):
                 reader = readerListEntry[0]
                 for i in readerListEntry[1:]:
@@ -52,7 +51,7 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter):
 
             print(f"plotting {reader.dataSetName} ...")
 
-            mean, stdDev, axisDict, timeSteps, atomicStates = entry
+            mean, stdDev, axisDict, timeSteps, atomicStates, chargeStates = entry
 
             numberAtomicStates = np.shape(mean)[axisDict['atomicState']]
             maxTime = max(maxTime, np.max(timeSteps))
@@ -62,14 +61,8 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter):
             widthBars[:-1] = timeSteps[1:] - timeSteps[:-1]
             widthBars[-1] = widthBars[-2]
 
-            chargeStates = np.fromiter(map(
-                    lambda atomicStateCollectionIndex: conv.getChargeState(
-                        atomicStateCollectionIndex,
-                        speciesDescriptor.atomicNumber,
-                        speciesDescriptor.numberLevels),
-                    atomicStates), dtype="u1")
-
-            chargeStateMask = np.fromiter(map(lambda chargeState: chargeState in self.chargeStatesToPlot, chargeStates), dtype=np.bool_)
+            chargeStateMask = np.fromiter(
+                map(lambda chargeState: chargeState in self.chargeStatesToPlot, chargeStates), dtype=np.bool_)
 
             aboveMinimumAbundanceMask = np.any(
                 (mean + stdDev) > self.minimumRelativeAbundance,

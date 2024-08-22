@@ -12,6 +12,7 @@ License: GPLv3+
 from . import Plotter
 from . import reader
 from .SpeciesDescriptor import SpeciesDescriptor
+from .SCFlyTools import AtomicConfigNumberConversion as conv
 
 import numpy as np
 import numpy.typing as npt
@@ -76,7 +77,11 @@ class AtomicStatePlotter(Plotter):
 
         return populationDataSamples, timeStepsSamples, atomicStatesSamples, axisDictSamples, scalingFactorSamples
 
-    def calculateMeanAndStdDev(self, readerList : list[reader.StateDistributionReader]) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64]]:
+    def calculateMeanAndStdDev(
+            self,
+            speciesDescriptor : SpeciesDescriptor,
+            readerList : list[reader.StateDistributionReader]
+        ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64], npt.NDArray[np.uint8]]:
         populationDataSamples, timeStepsSamples, atomicStatesSamples, axisDictSamples, scalingFactorSamples = self._readSamples(readerList)
 
         timeSteps = self.checkSamplesConsitent(timeStepsSamples)
@@ -113,20 +118,26 @@ class AtomicStatePlotter(Plotter):
         else:
             stdDev = np.zeros((numberIterations, numberAtomicStates))
 
-        return mean, stdDev, axisDict, timeSteps, atomicStates
+        chargeStates = np.fromiter(map(
+                    lambda atomicStateCollectionIndex: conv.getChargeState(
+                        atomicStateCollectionIndex,
+                        speciesDescriptor.atomicNumber,
+                        speciesDescriptor.numberLevels),
+                    atomicStates), dtype="u1")
 
-    def readData(self) -> list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64]]]:
+        return mean, stdDev, axisDict, timeSteps, atomicStates, chargeStates
+
+    def readData(self) -> list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64], npt.NDArray[np.uint8]]]:
         if len(self.readerList) <= 0:
             raise ValueError("need at least one reader to be able to plot something")
 
         data = []
 
-        for readerListEntry in self.readerList:
+        for readerListEntry, speciesDescriptor in zip(self.readerList, self.speciesDescriptorList):
             if isinstance(readerListEntry, list):
-                data.append(self.calculateMeanAndStdDev(readerListEntry))
+                data.append(self.calculateMeanAndStdDev(speciesDescriptor, readerListEntry))
             else:
-                data.append(self.calculateMeanAndStdDev([readerListEntry]))
-
+                data.append(self.calculateMeanAndStdDev(speciesDescriptor, [readerListEntry]))
 
         return data
 
