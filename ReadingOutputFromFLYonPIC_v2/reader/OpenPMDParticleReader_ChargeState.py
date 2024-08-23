@@ -29,7 +29,7 @@ class OpenPMDParticleReader_ChargeState(OpenPMDParticleReader):
         if self.atomicNumber <= 0:
             raise ValueError("atomicNumber must be >= 0")
 
-    def read(self) -> tuple[npt.NDArray[np.float64], tuple[npt.NDArray[np.float64], npt.NDArray[np.uint64]], dict[str, int], tuple[np.float64]]:
+    def read(self) -> tuple[npt.NDArray[np.float64], tuple[npt.NDArray[np.float64], npt.NDArray[np.uint8]], dict[str, int], tuple[np.float64]]:
         """see AtomicStateDistributionReader.py for documentation"""
         self.check()
 
@@ -43,4 +43,4 @@ class OpenPMDParticleReader_ChargeState(OpenPMDParticleReader):
             self.numberWorkers,
             self.chunkSize)
 
-        return accumulatedWeight, (timeSteps, np.arange(numberChargeStates, dtype="u8")), {"timeStep" : 0, "chargeState" : 1}, (typicalWeight,)
+        return accumulatedWeight, (timeSteps, np.arange(numberChargeStates, dtype="u1")), {"timeStep" : 0, "chargeState" : 1}, (typicalWeight,)

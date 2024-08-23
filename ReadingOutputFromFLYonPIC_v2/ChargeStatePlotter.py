@@ -15,7 +15,10 @@ from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
 class ChargeStatePlotter(AtomicStateAbsolutePlotter):
     def plot(self) -> None:
         """plot charge states relative abundance on logarithmic scale"""
+
         colorChargeStates = ChargeStateColors.getChargeStateColors(config)
+
+        data = self.readData
 
         # prepare plot
         figure = plt.figure(dpi=300)
@@ -23,8 +26,8 @@ class ChargeStatePlotter(AtomicStateAbsolutePlotter):
         axes.set_title("ChargeState population Data: " + config.dataName)
         axes.set_xlabel("time[s]")
         axes.set_ylabel("relative abundance")
-            if self.axisScale != "":
-                axes.set_yscale(self.axisScale)
+        if self.axisScale != "":
+            axes.set_yscale(self.axisScale)
         axes.set_ylim((1e-5,1))
 
         maxTime = 0

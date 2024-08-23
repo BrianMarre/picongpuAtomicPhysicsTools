@@ -18,6 +18,7 @@ from . import reader
 # general plotter interfaces and abstract base classes
 from .Plotter import Plotter
 from .SpeciesDescriptor import SpeciesDescriptor
+from .StatePlotter import StatePlotter
 from .AtomicStatePlotter import AtomicStatePlotter
 from .AtomicStateDiffPlotter import AtomicStateDiffPlotter
 
