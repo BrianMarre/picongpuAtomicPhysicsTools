@@ -12,6 +12,8 @@ License: GPLv3+
 from .Reader import Reader
 from .StateDistributionReader import StateDistributionReader
 from .OpenPMDParticleReader import OpenPMDParticleReader
+from .OpenPMDParticleReader_AtomicState import OpenPMDParticleReader_AtomicState
+from .OpenPMDParticleReader_ChargeState import OpenPMDParticleReader_ChargeState
 
 from .OpenPMDBinningReader import OpenPMDBinningReader
 from .SCFLYReader import SCFLYReader
@@ -21,6 +23,8 @@ __all__ = [
     "Reader",
     "StateDistributionReader",
     "OpenPMDParticleReader",
+    "OpenPMDParticleReader_AtomicState",
+    "OpenPMDParticleReader_ChargeState",
     "OpenPMDBinningReader",
     "SCFLYReader",
     "TimingDataReader"]

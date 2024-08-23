@@ -17,7 +17,6 @@ import numba
 import numpy as np
 import numpy.typing as npt
 import tqdm
-import enum
 
 import typeguard
 
@@ -84,114 +83,81 @@ def callFastHistogramInParallel(weights, propertyIndex, typicalWeight, numberPro
     return result[0, :]
 
 @typeguard.typechecked
-def getPropertyIndexHistogram(
-        fileName : str,
-        speciesName : str,
-        propertyName : str,
-        numberPropertyIndexValues : int,
-        numberWorkers : int,
-        chunkSize : int):
-    """ returns the atomic state data of an openPMD particle output of a simulation
-
-        @param fileName absolute/relative path of output
-        @param speciesName string identifier of species
-        @param numberAtomicStates number of unique atomic states in output
-        @param numberWorkers number of independent threads to use
-        @param chunkSize number of particles to try to to pass each worker in a chunk
-
-        @returns np.array((numberTimeSteps, numberAtomicStates))= accumulatedWeight/scalingFactor, np.array(numberIterations)= time, scalingFactor
-    """
-    series = opmd.Series(fileName, opmd.Access.read_only)
-
-    numberIterations = np.shape(series.iterations)[0]
-
-    accumulatedWeight = np.empty((numberIterations, numberPropertyIndexValues))
-    timeSteps = np.empty(numberIterations, dtype='f8')
-
-    print(fileName + " iteration:")
-    for i, stepIdx in tqdm.tqdm(enumerate(series.iterations)):
-        step = series.iterations[stepIdx]
-        species = step.particles[speciesName]
-
-        # get recordComponents
-        weightingRecordComponent = species["weighting"][opmd.Mesh_Record_Component.SCALAR]
-        propertyIndexRecordComponent = species[propertyName][opmd.Mesh_Record_Component.SCALAR]
-
-        # mark to be loaded, @todo give option to load chunkwise
-        weights = weightingRecordComponent.load_chunk()
-        propertyIndices = propertyIndexRecordComponent.load_chunk()
-
-        # load data
-        series.flush()
-
-        typicalWeight = np.mean(weights[0:100])
-
-        accumulatedWeight[i] = callFastHistogramInParallel(
-            weights,
-            propertyIndices,
-            typicalWeight,
-            numberPropertyIndexValues,
-            numberWorkers,
-            chunkSize)
-        timeSteps[i] = step.get_attribute("time") * step.get_attribute("timeUnitSI")
-
-        del weights
-        del propertyIndices
-
-    # delete series
-    del series
-
-    return accumulatedWeight, timeSteps, typicalWeight
-
-class Property(enum.Enum):
-    atomicState = 0
-    chargeState = 1
-
-@typeguard.typechecked
 class OpenPMDParticleReader(StateDistributionReader):
-    """read in atomic state distribution from openPMD particle dump"""
-
-    speciesName : str
     # name of ion species in openPMD output
+    speciesName : str
 
-    propertyToRead : Property = Property.atomicState
-    # which property to read in, atomic state or charge state
-
-    numberWorkers : int
     # number of threads to use for reading
-    chunkSize : int
+    numberWorkers : int
     # number of particles to pass to each thread
+    chunkSize : int
 
-    FLYonPICAtomicStatesInputFileName : str
-    # path of file FLYonPIC atomic state input data file, used for converting collection Index to configNumber
-    FLYonPICOpenPMDOutputFileName : str
     # openPMD output file name, a regex describing openPMD naming of openPMD output files, see openPMD-api for details
+    FLYonPICOpenPMDOutputFileName : str
 
-    _propertyDict : dict[Property, str] = {Property.atomicState : "atomicStateCollectionIndex", Property.chargeState : "boundElectrons"}
-    # map from Property to particle property name
-
-    def read(self) -> tuple[npt.NDArray[np.float64], tuple[npt.NDArray[np.float64], npt.NDArray[np.uint64]], dict[str, int], tuple[np.float64]]:
-        """see AtomicStateDistributionReader.py for documentation"""
-        if(self.FLYonPICAtomicStatesInputFileName == ""):
-            # no FLYonPIC atomic input data file
-            raise ValueError("FLYonPIC atomic data input file required")
+    def check(self) -> None:
         if(self.FLYonPICOpenPMDOutputFileName == ""):
             # no simulation output file regex
             raise ValueError("FLYonPIC output file required")
 
-        # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber
-        atomicConfigNumbers = np.loadtxt(
-            self.FLYonPICAtomicStatesInputFileName,
-            dtype=[('atomicConfigNumber', 'u8'), ('excitationEnergy', 'f4')])['atomicConfigNumber']
+    def getPropertyIndexHistogram(
+            fileName : str,
+            speciesName : str,
+            propertyName : str,
+            numberPropertyIndexValues : int,
+            numberWorkers : int,
+            chunkSize : int):
+        """ returns the atomic state data of an openPMD particle output of a simulation
 
-        numberAtomicStates = np.shape(atomicConfigNumbers)[0]
+            @param fileName absolute/relative path of output
+            @param speciesName string identifier of species
+            @param numberAtomicStates number of unique atomic states in output
+            @param numberWorkers number of independent threads to use
+            @param chunkSize number of particles to try to to pass each worker in a chunk
 
-        accumulatedWeights, timeSteps, typicalWeight = getPropertyIndexHistogram(
-            self.FLYonPICOpenPMDOutputFileName,
-            self.speciesName,
-            self._propertyDict[self.propertyToRead],
-            numberAtomicStates,
-            self.numberWorkers,
-            self.chunkSize)
+            @returns np.array((numberTimeSteps, numberAtomicStates))= accumulatedWeight/scalingFactor, np.array(numberIterations)= time, scalingFactor
+        """
+        series = opmd.Series(fileName, opmd.Access.read_only)
 
-        return accumulatedWeight, (timeSteps, atomicConfigNumber), {"timeStep" : 0, "atomicState" : 1}, (typicalWeight,)
+        numberIterations = np.shape(series.iterations)[0]
+
+        accumulatedWeight = np.empty((numberIterations, numberPropertyIndexValues))
+        timeSteps = np.empty(numberIterations, dtype='f8')
+
+        print(fileName + " iteration:")
+        for i, stepIdx in tqdm.tqdm(enumerate(series.iterations)):
+            step = series.iterations[stepIdx]
+            species = step.particles[speciesName]
+
+            # get recordComponents
+            weightingRecordComponent = species["weighting"][opmd.Mesh_Record_Component.SCALAR]
+            propertyIndexRecordComponent = species[propertyName][opmd.Mesh_Record_Component.SCALAR]
+
+            # mark to be loaded, @todo give option to load chunkwise
+            weights = weightingRecordComponent.load_chunk()
+            propertyIndices = propertyIndexRecordComponent.load_chunk()
+
+            # load data
+            series.flush()
+
+            typicalWeight = np.mean(weights[0:100])
+
+            accumulatedWeight[i] = callFastHistogramInParallel(
+                weights,
+                propertyIndices,
+                typicalWeight,
+                numberPropertyIndexValues,
+                numberWorkers,
+                chunkSize)
+            timeSteps[i] = step.get_attribute("time") * step.get_attribute("timeUnitSI")
+
+            del weights
+            del propertyIndices
+
+        # delete series
+        del series
+
+        return accumulatedWeight, timeSteps, typicalWeight
+
+    def read(self):
+        raise NotImplementedError("abstract base class only")
