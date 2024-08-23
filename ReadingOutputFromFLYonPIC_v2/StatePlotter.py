@@ -12,6 +12,7 @@ License: GPLv3+
 from . import Plotter
 from . import reader
 from .SpeciesDescriptor import SpeciesDescriptor
+from .SCFlyTools import AtomicConfigNumberConversion as conv
 
 import numpy as np
 import numpy.typing as npt
@@ -20,6 +21,7 @@ import math
 import typeguard
 import typing
 
+@typeguard.typechecked
 class StatePlotter(Plotter):
     # single reader will be plotted directly, list of readers will be plotted as mean and standard deviation of reader data
     readerList : list[reader.StateDistributionReader | list[reader.StateDistributionReader]]
@@ -51,7 +53,7 @@ class StatePlotter(Plotter):
         colors = iter([self.colorMap(i) for i in range(self.numberColorsInColorMap)])
 
         if self.numberColorsInColorMap < (len(additionalIndices) + len(self.chargeStatesToPlot)):
-            print("Warning: number of colors is less than requested unique lines colors, some colors will repeat!")
+            print("Warning: number of colors is less than requested unique lines colors, some colors may repeat!")
 
         ## assign all chargeStates a color
         colorChargeStates = {}
@@ -71,7 +73,36 @@ class StatePlotter(Plotter):
 
         return colorChargeStates
 
-    def _readSamples(self, readerListEntry : list[reader.StateDistributionReader]):
+    def reduceToPerChargeState(self, atomicStatePopulationData, axisDict, atomicConfigNumbers, speciesDescriptor):
+        shape = np.shape(atomicStatePopulationData)
+        numberTimeSteps = shape[axisDict['timeStep']]
+        numberAtomicStates = shape[axisDict['atomicState']]
+        del shape
+
+        numberChargeStates = speciesDescriptor.atomicNumber + 1
+
+        # reduce to per charge state
+        chargeStatePopulationData = np.zeros((numberTimeSteps, numberChargeStates))
+        for i, atomicConfigNumber in enumerate(atomicConfigNumbers):
+            chargeState = conv.getChargeState(
+                atomicConfigNumber,
+                speciesDescriptor.atomicNumber,
+                speciesDescriptor.numberLevels)
+            chargeStatePopulationData[:, int(chargeState)] += np.take(
+                atomicStatePopulationData, i, axisDict["atomicState"])
+
+        axisDict = {'timeStep' : 0, 'chargeState' : 1}
+
+        chargeStates = np.arange(numberChargeStates)
+
+        return chargeStatePopulationData, axisDict, chargeStates
+
+    def _readSamples(
+            self,
+            readerListEntry : list[reader.StateDistributionReader],
+            targetStateType : int ,
+            speciesDescriptor : SpeciesDescriptor):
+
         # load  data
         populationDataSamples : list[npt.NDArray[np.float64]] = []
         timeStepsSamples : list[npt.NDArray[np.float64]] = []
@@ -81,6 +112,15 @@ class StatePlotter(Plotter):
 
         for readerInList in readerListEntry:
             tuple_sample = readerInList.read()
+
+            if readerInList.RETURN_STATE_TYPE != targetStateType:
+                atomicPopulationData, axisValuesTuple, axisDict, scalingFactorTuple = tuple_sample
+
+                chargeStateData, axisDict, chargeStates = self.reduceToPerChargeState(
+                    atomicPopulationData, axisDict, axisValuesTuple[1], speciesDescriptor)
+
+                tuple_sample = (chargeStateData, (axisValuesTuple[0], chargeStates), axisDict, scalingFactorTuple)
+
             populationDataSamples.append(tuple_sample[0])
             timeStepsSamples.append(tuple_sample[1][0])
             statesSamples.append(tuple_sample[1][1])
@@ -89,13 +129,14 @@ class StatePlotter(Plotter):
 
         return populationDataSamples, timeStepsSamples, statesSamples, axisDictSamples, scalingFactorSamples
 
-
     def calculateMeanAndStdDevAbundance(
             self,
             speciesDescriptor : SpeciesDescriptor,
-            readerList : list[reader.StateDistributionReader]
+            readerList : list[reader.StateDistributionReader],
+            targetStateType : int,
         ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[typing.Any]]:
-        populationDataSamples, timeStepsSamples, statesSamples, axisDictSamples, scalingFactorSamples = self._readSamples(readerList)
+        populationDataSamples, timeStepsSamples, statesSamples, axisDictSamples, scalingFactorSamples \
+            = self._readSamples(readerList, targetStateType, speciesDescriptor)
 
         timeSteps = self.checkSamplesConsistent(timeStepsSamples)
         states = self.checkSamplesConsistent(statesSamples)
@@ -133,17 +174,48 @@ class StatePlotter(Plotter):
 
         return mean, stdDev, axisDict, timeSteps, states
 
-    def readData(self) -> list[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], dict[str, int], npt.NDArray[np.float64], npt.NDArray[np.uint64], npt.NDArray[np.uint8]]]:
+    def getCommonReturnStateType(
+            self,
+            readerList : list[reader.StateDistributionReader],
+            targetStateType : int = reader.StateType.ATOMIC_STATE) -> int:
+        """
+        will return reader.StateType.ATOMIC_STATE if for all readers
+            .RETURN_STATE_TYPE == targetStateType == reader.StateType.ATOMIC_STATE, otherwise will return
+            reader.StateType.CHARGE_STATE
+        """
+        return_state_type = targetStateType
+
+        for i in readerList:
+            if i.RETURN_STATE_TYPE != return_state_type:
+                return_state_type = reader.StateType.CHARGE_STATE
+
+        return return_state_type
+
+    def readData(self, forcedTargetStateType : int = reader.StateType.ATOMIC_STATE) -> list[tuple]:
+        """
+        @returns mean, stdDev, axisDict, timeSteps, states[, chargeState]
+        """
 
         if len(self.readerList) <= 0:
             raise ValueError("need at least one reader to be able to plot something")
 
         data = []
 
+        print(f"forcedTarget: {forcedTargetStateType}")
+
+
         for readerListEntry, speciesDescriptor in zip(self.readerList, self.speciesDescriptorList):
             if isinstance(readerListEntry, list):
-                data.append(self.calculateMeanAndStdDevAbundance(speciesDescriptor, readerListEntry))
+                targetStateType = self.getCommonReturnStateType(readerListEntry, forcedTargetStateType)
+                print(targetStateType)
+
+                data.append(self.calculateMeanAndStdDevAbundance(speciesDescriptor, readerListEntry, forcedTargetStateType))
             else:
-                data.append(self.calculateMeanAndStdDevAbundance(speciesDescriptor, [readerListEntry]))
+                targetStateType = self.getCommonReturnStateType([readerListEntry], forcedTargetStateType)
+                data.append(self.calculateMeanAndStdDevAbundance(
+                    speciesDescriptor,
+                    [readerListEntry],
+                    targetStateType))
+                print(targetStateType)
 
         return data

@@ -9,15 +9,20 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-import typeguard
+from . import Reader
 
 import numpy as np
 import numpy.typing as npt
 
-from . import Reader
+import typeguard
+import typing
 
 @typeguard.typechecked
 class StateDistributionReader(Reader):
+
+    # kind of state read from data
+    RETURN_STATE_TYPE : int
+
     def read(self) -> tuple[npt.NDArray[np.float64], tuple[npt.NDArray[np.float64], npt.NDArray[typing.Any]], dict[str, int], tuple[np.float64]]:
         """
         read in state distribution over time from source

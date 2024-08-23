@@ -18,9 +18,11 @@ from .OpenPMDParticleReader_ChargeState import OpenPMDParticleReader_ChargeState
 from .OpenPMDBinningReader import OpenPMDBinningReader
 from .SCFLYReader import SCFLYReader
 from .TimingDataReader import TimingDataReader
+from . import StateType
 
 __all__ = [
     "Reader",
+    "StateType",
     "StateDistributionReader",
     "OpenPMDParticleReader",
     "OpenPMDParticleReader_AtomicState",

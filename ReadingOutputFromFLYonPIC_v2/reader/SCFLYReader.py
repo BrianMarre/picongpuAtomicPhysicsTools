@@ -10,6 +10,7 @@ License: GPLv3+
 """
 
 from . import StateDistributionReader
+from . import StateType
 from ..SCFlyTools import AtomicConfigNumberConversion as conv
 
 import numpy as np
@@ -37,6 +38,8 @@ class SCFLYReader(StateDistributionReader):
     # atomic number of ion species
     numberLevels : int
     # maximum principal quantum number used, i.e. number of shells included in the data set
+
+    RETURN_STATE_TYPE : int = StateType.ATOMIC_STATE
 
     def readSCFLYNames(self) -> tuple[dict[str, np.uint64], dict[np.uint64, str]]:
         """

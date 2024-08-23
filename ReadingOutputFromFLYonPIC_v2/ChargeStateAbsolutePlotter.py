@@ -9,27 +9,28 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-from . import AtomicStatePlotter
 from . import StateAbsolutePlotter
+from .reader import StateType
 
 import typeguard
 import tqdm
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 @typeguard.typechecked
-class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
+class ChargeStateAbsolutePlotter(StateAbsolutePlotter):
     def plot(self) -> None:
-        """plot absolute atomic populations"""
+        """plot charge states relative abundance on logarithmic scale"""
 
         colorChargeStates = self.getChargeStateColors()
 
-        data = self.readData()
+        data = self.readData(StateType.CHARGE_STATE)
 
         # prepare plot
         figure = plt.figure(dpi=300)
         axes = figure.add_subplot(111)
-        axes.set_title("AtomicPopulation Data: " + self.plotName)
+        axes.set_title("ChargeState population Data: " + self.plotName)
         axes.set_xlabel("time[s]")
         axes.set_ylabel("relative abundance")
 
@@ -39,7 +40,7 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
         axes.set_ylim((self.minimumRelativeAbundance, 1.))
 
         maxTime = 0
-        print("plotting atomic states absolute ...")
+        print("plotting charge states absolute ...")
 
         for entry, readerListEntry, linestyle in zip(data, self.readerList, self.plotLineStyles):
             if isinstance(readerListEntry, list):
@@ -52,9 +53,8 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
 
             print(f"\t plotting {reader.dataSetName}")
 
-            mean, stdDev, axisDict, timeSteps, atomicStates, chargeStates = entry
+            mean, stdDev, axisDict, timeSteps, chargeStates = entry
 
-            numberAtomicStates = np.shape(mean)[axisDict['atomicState']]
             maxTime = max(maxTime, np.max(timeSteps))
 
             #get bar width
@@ -69,19 +69,18 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
                 (mean + stdDev) > self.minimumRelativeAbundance,
                 axis=axisDict["timeStep"])
 
-            atomicStatePlottingMask = np.logical_and(chargeStateMask, aboveMinimumAbundanceMask)
+            plottingMask = np.logical_and(chargeStateMask, aboveMinimumAbundanceMask)
             del aboveMinimumAbundanceMask
             del chargeStateMask
 
-            for collectionIndex, tuple_ in tqdm.tqdm(enumerate(zip(chargeStates, atomicStatePlottingMask))):
-                chargeState, plotMask = tuple_
-                if plotMask:
-                    stateAxis = axisDict["atomicState"]
+            for chargeState, plotMask in tqdm.tqdm(zip(chargeStates, plottingMask)):
+                stateAxis = axisDict["chargeState"]
 
+                if plotMask:
                     # plot mean
                     axes.plot(
                         timeSteps,
-                        np.take(mean, collectionIndex, axis=stateAxis),
+                        np.take(mean, chargeState, axis=stateAxis),
                         linewidth=1,
                         alpha=0.5,
                         color=colorChargeStates[chargeState],
@@ -91,11 +90,11 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
                     # plot standard deviation
                     axes.bar(
                         timeSteps,
-                        2 * np.take(stdDev, collectionIndex, axis=stateAxis),
+                        2 * np.take(stdDev, chargeState, axis=stateAxis),
                         width=widthBars,
                         bottom = (
-                            np.take(mean, collectionIndex, axis=stateAxis)
-                            - np.take(stdDev, collectionIndex, axis=stateAxis)),
+                            np.take(mean, chargeState, axis=stateAxis)
+                            - np.take(stdDev, chargeState, axis=stateAxis)),
                         align='center',
                         color=colorChargeStates[chargeState],
                         alpha=0.2)
@@ -106,6 +105,6 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
         lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
 
         print("\t saving...")
-        plt.savefig(f"{self.figureStoragePath}/AbsoluteAbundance_{self.plotName}",
+        plt.savefig(self.figureStoragePath + "AbsoluteAbundance_ChargeStates_" + self.plotName,
                     bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.close(figure)

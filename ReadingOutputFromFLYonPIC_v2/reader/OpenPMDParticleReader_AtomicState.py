@@ -10,6 +10,7 @@ License: GPLv3+
 """
 
 from .OpenPMDParticleReader import OpenPMDParticleReader
+from . import StateType
 
 import numpy as np
 import numpy.typing as npt
@@ -22,6 +23,8 @@ class OpenPMDParticleReader_AtomicState(OpenPMDParticleReader):
 
     # path of file FLYonPIC atomic state input data file, used for converting collection Index to configNumber
     FLYonPICAtomicStatesInputFileName : str
+
+    RETURN_STATE_TYPE : int = StateType.ATOMIC_STATE
 
     def check(self) -> None:
         super().check()

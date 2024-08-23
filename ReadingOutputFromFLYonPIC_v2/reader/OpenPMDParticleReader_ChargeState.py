@@ -9,7 +9,8 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-from .OpenPMDParticleReader import OpenPMDParticleReader
+from . import OpenPMDParticleReader
+from . import StateType
 
 import numpy as np
 import numpy.typing as npt
@@ -22,6 +23,8 @@ class OpenPMDParticleReader_ChargeState(OpenPMDParticleReader):
 
     # atomic number of species
     atomicNumber : int
+
+    RETURN_STATE_TYPE : int = StateType.CHARGE_STATE
 
     def check(self) -> None:
         super().check()

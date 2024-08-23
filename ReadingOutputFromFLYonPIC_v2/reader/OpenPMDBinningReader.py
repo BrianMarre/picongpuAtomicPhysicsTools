@@ -10,6 +10,7 @@ License: GPLv3+
 """
 
 from . import StateDistributionReader
+from . import StateType
 
 import numpy as np
 import numpy.typing as npt
@@ -25,6 +26,8 @@ class OpenPMDBinningReader(StateDistributionReader):
 
     FLYonPICAtomicStatesInputDataFileName : str
     # path of file FLYonPIC atomic state input data file, used for converting collection Index to configNumber
+
+    RETURN_STATE_TYPE : int = StateType.ATOMIC_STATE
 
     def loadAtomicStateData(self) -> npt.NDArray[np.uint64]:
         # load atomic input Data to get conversion atomicStateCollectionIndex to atomicConfigNumber

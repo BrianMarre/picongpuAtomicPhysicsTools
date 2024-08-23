@@ -35,7 +35,7 @@ class AtomicStateDiffPlotter(AtomicStatePlotter):
         self.check()
 
         data = super().readData()
-        data.append(self.calculateMeanAndStdDevAbundance(self.referenceSpeciesDescriptor, self.referenceReaders))
+        data.append(self.calculateMeanAndStdDevAbundance(self.referenceSpeciesDescriptor, self.referenceReaders, reader.StateType.ATOMIC_STATE))
 
         return data
 

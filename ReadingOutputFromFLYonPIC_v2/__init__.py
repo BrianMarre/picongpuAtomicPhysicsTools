@@ -19,11 +19,14 @@ from . import reader
 from .Plotter import Plotter
 from .SpeciesDescriptor import SpeciesDescriptor
 from .StatePlotter import StatePlotter
+from .StateAbsolutePlotter import StateAbsolutePlotter
 from .AtomicStatePlotter import AtomicStatePlotter
 from .AtomicStateDiffPlotter import AtomicStateDiffPlotter
 
 # concrete implementations
 from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
+from .ChargeStateAbsolutePlotter import ChargeStateAbsolutePlotter
+
 from .AtomicStateDiffOverviewPlotter import AtomicStateDiffOverviewPlotter
 from .AtomicStateDiffLineoutPlotter import AtomicStateDiffLineoutPlotter
 
@@ -32,8 +35,11 @@ __all__ = [
     "SpeciesDescriptor",
     "reader",
     "Plotter",
+    "StatePlotter",
+    "StateAbsolutePlotter",
     "AtomicStatePlotter",
     "AtomicStateDiffPlotter"
     "AtomicStateAbsolutePlotter",
+    "ChargeStateAbsolutePlotter",
     "AtomicStateDiffOverviewPlotter",
     "AtomicStateDiffLineoutPlotter"]
