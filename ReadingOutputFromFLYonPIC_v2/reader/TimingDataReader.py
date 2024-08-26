@@ -16,11 +16,11 @@ import pydantic
 import typeguard
 
 @typeguard.typechecked
-class TimingDataReader(pydantic.BaseModel):
+class TimingDataReader(Reader):
     """read timing data from stdout file of PIConGPU run"""
 
-    outputFileName : str
     # picongpu stdout output file name, may be path absolute or relative to execution location
+    outputFileName : str
 
     def read(self) -> npt.NDArray[np.dtype([('step', 'i4'), ('time_total[msec]', 'u8'), ('time_step[msec]', 'u8')])]:
         """

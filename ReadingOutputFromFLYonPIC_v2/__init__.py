@@ -29,6 +29,7 @@ from .ChargeStateAbsolutePlotter import ChargeStateAbsolutePlotter
 
 from .AtomicStateDiffOverviewPlotter import AtomicStateDiffOverviewPlotter
 from .AtomicStateDiffLineoutPlotter import AtomicStateDiffLineoutPlotter
+from .TimingPlotter import TimingPlotter
 
 __all__ = [
     "SCFlyTools",
@@ -42,4 +43,5 @@ __all__ = [
     "AtomicStateAbsolutePlotter",
     "ChargeStateAbsolutePlotter",
     "AtomicStateDiffOverviewPlotter",
-    "AtomicStateDiffLineoutPlotter"]
+    "AtomicStateDiffLineoutPlotter",
+    "TimingPlotter"]
