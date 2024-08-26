@@ -201,13 +201,9 @@ class StatePlotter(Plotter):
 
         data = []
 
-        print(f"forcedTarget: {forcedTargetStateType}")
-
-
         for readerListEntry, speciesDescriptor in zip(self.readerList, self.speciesDescriptorList):
             if isinstance(readerListEntry, list):
                 targetStateType = self.getCommonReturnStateType(readerListEntry, forcedTargetStateType)
-                print(targetStateType)
 
                 data.append(self.calculateMeanAndStdDevAbundance(speciesDescriptor, readerListEntry, forcedTargetStateType))
             else:
@@ -216,6 +212,5 @@ class StatePlotter(Plotter):
                     speciesDescriptor,
                     [readerListEntry],
                     targetStateType))
-                print(targetStateType)
 
         return data

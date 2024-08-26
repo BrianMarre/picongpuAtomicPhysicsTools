@@ -13,6 +13,7 @@ from . import reader
 from . import Plotter
 
 import matplotlib.pyplot as plt
+from matplotlib.legend import Legend
 import numpy as np
 import numpy.typing as npt
 import copy
@@ -22,13 +23,13 @@ import typeguard
 @typeguard.typechecked
 class TimingPlotter(Plotter):
     # overwrite to ensure only TimingDataReader
-    readerList : list[TimingDataReader]
+    readerList : list[reader.TimingDataReader]
 
     # whether to also plot init and clean up as a separate steps
     plotCleanUpAndInit : bool
 
     # only show each periodStepTicks'
-    periodStepTicks : int
+    numberXTicks : int
 
     # number y ticks
     numberYTicksSimulationTime : int
@@ -41,7 +42,7 @@ class TimingPlotter(Plotter):
             readerDataSets.append(readerInList.read())
         return readerDataSets
 
-    def plotTotalSimulationTime(self, axes_timeTotal, readerDataSets):
+    def plotTotalSimulationTime(self, axes_timeTotal, readerDataSets) -> Legend:
         maxStep = 0
         minStep = 0
         maxTime = 0
@@ -63,7 +64,7 @@ class TimingPlotter(Plotter):
         axes_timeTotal.set_ylabel("total time [min]")
         axes_timeTotal.set_ylim(bottom=0)
 
-        xticks = list(range(minStep, maxStep+1, int(np.ceil(maxStep / self.periodStepTicks))))
+        xticks = list(range(minStep, maxStep, int(np.ceil((maxStep - minStep) / self.numberXTicks))))
         xticks[0] = minStep
         xticks[-1] = maxStep
 
@@ -88,7 +89,7 @@ class TimingPlotter(Plotter):
 
         return lgd_timeTotal
 
-    def plotStepTimes(self, axes_timeSteps, readerDataSets) -> None:
+    def plotStepTimes(self, axes_timeSteps, readerDataSets) -> Legend:
         maxStep = 0
         minStep = 0
         maxTime = 0
@@ -111,7 +112,7 @@ class TimingPlotter(Plotter):
         axes_timeSteps.set_ylabel("calculation step time [s]")
         axes_timeSteps.set_ylim(bottom=0)
 
-        xticks = list(range(minStep, maxStep+1, int(np.ceil(maxStep / self.periodStepTicks))))
+        xticks = list(range(minStep, maxStep+1, int(np.ceil((maxStep - minStep) / self.numberXTicks))))
         xticks[0] = minStep
         xticks[-1] = maxStep
         labels = copy.copy(xticks)

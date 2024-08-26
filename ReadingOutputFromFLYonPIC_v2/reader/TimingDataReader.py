@@ -9,6 +9,8 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
+from . import Reader
+
 import numpy as np
 import numpy.typing as npt
 
@@ -32,7 +34,7 @@ class TimingDataReader(Reader):
         result_template_timeStep = [('step', 'u4'), ('total_h', 'U10'), ('total_min', 'U10'), ('total_sec', 'U10'), ('total_msec', 'U10'), ('step_h', 'U10'), ('step_min', 'U10'), ('step_sec', 'U10'), ('step_msec', 'U10')]
 
         ## read in data from file
-        output = np.fromregex(fileName, regex_timeStep, result_template_timeStep)
+        output = np.fromregex(self.outputFileName, regex_timeStep, result_template_timeStep)
 
         numberSteps = np.shape(output)[0] - 1
 
@@ -62,7 +64,7 @@ class TimingDataReader(Reader):
         regex_initTime = r"initialization time:\s*(\d+h)?\s*(\d+min)?\s*(\d+sec)?\s+(\d+msec) = (\d+.\d+) sec\n"
         result_template_initTime = [('h', 'U10'), ('min', 'U10'), ('sec', 'U10'), ('msec', 'U10'), ('inSeconds', 'f8')]
 
-        output = np.fromregex(fileName, regex_initTime, result_template_initTime)
+        output = np.fromregex(self.outputFileName, regex_initTime, result_template_initTime)
 
         timeUnits = ['h', 'min', 'sec', 'msec']
         for timeUnit in timeUnits:
@@ -84,7 +86,7 @@ class TimingDataReader(Reader):
         regex_fullSimulationTime = r"full simulation time:\s*(\d+h)?\s*(\d+min)?\s*(\d+sec)?\s+(\d+msec) = (\d+.\d+) sec\n"
         result_template_fullSimulationTime = [('h', 'U10'), ('min', 'U10'), ('sec', 'U10'), ('msec', 'U10'), ('inSeconds', 'f8')]
 
-        output = np.fromregex(fileName, regex_fullSimulationTime, result_template_fullSimulationTime)
+        output = np.fromregex(self.outputFileName, regex_fullSimulationTime, result_template_fullSimulationTime)
 
         timeUnits = ['h', 'min', 'sec', 'msec']
         for timeUnit in timeUnits:
