@@ -14,6 +14,7 @@ from .StateDistributionReader import StateDistributionReader
 from .OpenPMDParticleReader import OpenPMDParticleReader
 from .OpenPMDParticleReader_AtomicState import OpenPMDParticleReader_AtomicState
 from .OpenPMDParticleReader_ChargeState import OpenPMDParticleReader_ChargeState
+from .EnergyHistogramPluginReader import EnergyHistogramPluginReader
 
 from .OpenPMDBinningReader import OpenPMDBinningReader
 from .SCFLYReader import SCFLYReader

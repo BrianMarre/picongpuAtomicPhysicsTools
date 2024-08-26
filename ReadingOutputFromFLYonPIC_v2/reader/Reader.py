@@ -19,7 +19,7 @@ import numpy.typing as npt
 class Reader(pydantic.BaseModel):
     dataSetName : str
 
-    def read(self) -> tuple[npt.NDArray, list[npt.NDArray], dict[str, int], typing.Any]:
+    def read(self) -> tuple[npt.NDArray, list[npt.NDArray], dict[str, int], tuple[typing.Any]]:
         """
         read in data from source
 
@@ -27,6 +27,6 @@ class Reader(pydantic.BaseModel):
             data table,
             index values corresponding to each axis of data table,
             axisDict map of name to data table axis describing the physical meaning of an axis,
-            additional values necessary for interpretation of data table values like for example scaling factors
+            tuple of additional values necessary for interpretation of data table values like for example scaling factors
         """
         raise NotImplementedError("abstract interface only")
