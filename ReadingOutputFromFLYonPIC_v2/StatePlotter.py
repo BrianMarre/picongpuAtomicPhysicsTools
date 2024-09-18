@@ -35,6 +35,8 @@ class StatePlotter(Plotter):
     # one species descriptor for each readerList entry
     speciesDescriptorList : list[SpeciesDescriptor]
 
+    lineWidth : float = 1.0
+
     def checkSamplesConsistent(self, sampleList : list) -> typing.Any:
         # check all samples element wise equal
         if len(sampleList) > 1:

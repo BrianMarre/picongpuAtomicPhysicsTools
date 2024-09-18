@@ -18,8 +18,11 @@ class StateAbsolutePlotter(StatePlotter):
     # description of linestyle descriptors to use in plots for each reader
     plotLineStyles : list[str]
 
-    # minimum relative
+    # minimum relative abundance
     minimumRelativeAbundance : float = 1.e-5
+
+    # max time to include in the plot
+    maxTime : float = -1
 
     # chargeStates to plot
     chargeStatesToPlot : list[int]

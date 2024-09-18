@@ -100,6 +100,9 @@ class AtomicStateAbsolutePlotter(AtomicStatePlotter, StateAbsolutePlotter):
                         color=colorChargeStates[chargeState],
                         alpha=0.2)
 
+        if self.maxTime > 0:
+            maxTime = min(maxTime, self.maxTime)
+
         axes.set_xlim((0,maxTime))
         handles, labels = axes.get_legend_handles_labels()
         uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]

@@ -68,5 +68,5 @@ class AtomicStateDiffLineoutPlotter(AtomicStateDiffPlotter):
 
         print("\t saving ...")
         plt.tight_layout()
-        plt.savefig(self.figureStoragePath + "AtomicState_DiffLineout_" + self.plotName, bbox_extra_artists=(title,))
+        plt.savefig(self.figureStoragePath + "/AtomicState_DiffLineout_" + self.plotName, bbox_extra_artists=(title,))
         plt.close(figure)

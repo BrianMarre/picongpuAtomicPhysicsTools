@@ -9,7 +9,7 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-from Reader import Reader
+from . import Reader
 
 import numpy as np
 import numpy.typing as npt

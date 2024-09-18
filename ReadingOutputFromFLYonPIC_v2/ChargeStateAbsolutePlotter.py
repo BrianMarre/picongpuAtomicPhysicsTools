@@ -31,7 +31,7 @@ class ChargeStateAbsolutePlotter(StateAbsolutePlotter):
         figure = plt.figure(dpi=300)
         axes = figure.add_subplot(111)
         axes.set_title("ChargeState population Data: " + self.plotName)
-        axes.set_xlabel("time[s]")
+        axes.set_xlabel("time[fs]")
         axes.set_ylabel("relative abundance")
 
         if self.axisScale != "":
@@ -54,6 +54,8 @@ class ChargeStateAbsolutePlotter(StateAbsolutePlotter):
             print(f"\t plotting {reader.dataSetName}")
 
             mean, stdDev, axisDict, timeSteps, chargeStates = entry
+
+            timeSteps = timeSteps * 1e15
 
             maxTime = max(maxTime, np.max(timeSteps))
 
@@ -81,7 +83,7 @@ class ChargeStateAbsolutePlotter(StateAbsolutePlotter):
                     axes.plot(
                         timeSteps,
                         np.take(mean, chargeState, axis=stateAxis),
-                        linewidth=1,
+                        linewidth=self.lineWidth,
                         alpha=0.5,
                         color=colorChargeStates[chargeState],
                         linestyle = linestyle,
@@ -99,12 +101,15 @@ class ChargeStateAbsolutePlotter(StateAbsolutePlotter):
                         color=colorChargeStates[chargeState],
                         alpha=0.2)
 
+        if self.maxTime > 0:
+            maxTime = min(maxTime, self.maxTime)
+
         axes.set_xlim((0,maxTime))
         handles, labels = axes.get_legend_handles_labels()
         uniqueHandles = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
         lgd = axes.legend(*zip(*uniqueHandles), loc='upper left', bbox_to_anchor=(1.01, 1.05), fontsize='small')
 
         print("\t saving...")
-        plt.savefig(self.figureStoragePath + "AbsoluteAbundance_ChargeStates_" + self.plotName,
+        plt.savefig(self.figureStoragePath + "/AbsoluteAbundance_ChargeStates_" + self.plotName,
                     bbox_extra_artists=(lgd,), bbox_inches='tight')
         plt.close(figure)

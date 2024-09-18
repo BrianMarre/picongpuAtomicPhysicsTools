@@ -66,16 +66,16 @@ def plotRecombinationImportance(config : cfg.AtomicPopulationPlot.PlotConfig, FL
     for i in range(firstIndexInitialChargeState, lastIndexInitialChargeState + 1):
         atomicConfigNumber = atomicConfigNumbers[i]
         z = chargeStates[i]
-        line = axes.plot(timeSteps, atomicPopulationData[:, i], linewidth=1, alpha=0.5, linestyle="--",
+        line = axes.plot(timeSteps, atomicPopulationData[:, i], linewidth=self.lineWidth, alpha=0.5, linestyle="--",
                     color=colorChargeStates[z], label=str(
                         conv.getLevelVector(atomicConfigNumber, config.openPMDReaderConfig.atomicNumber, config.openPMDReaderConfig.numLevels)))
         atomicStateLines.append(line[0])
     # plot below charge states
     for z in range(FLYonPICInitialChargeState):
-        axes.plot(timeSteps, belowFLYonPICInitial[:, z], linewidth=1, alpha=0.5, linestyle="--",
+        axes.plot(timeSteps, belowFLYonPICInitial[:, z], linewidth=self.lineWidth, alpha=0.5, linestyle="--",
                     color=colorChargeStates[z], label="[SCFLY] chargeState " + str(z))
     # plot other
-    axes.plot(timeSteps, aboveFLYonPICInitial, linewidth=1, alpha=0.5, linestyle="--",
+    axes.plot(timeSteps, aboveFLYonPICInitial, linewidth=self.lineWidth, alpha=0.5, linestyle="--",
                 color=colorChargeStates[-1], label="[SCFLY] other")
 
     axes.set_xlim((0,maxTime))
