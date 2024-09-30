@@ -9,8 +9,10 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-from . import openPMD
-from . import SCFLY
-from . import TimingData
+import pydantic
 
-__all__ = ["openPMD", "SCFLY", "TimingData"]
+class SpeciesDescriptor(pydantic.BaseModel):
+    # atomic number of ion speciesq
+    atomicNumber : int
+    # maximum principal quantum number used
+    numberLevels : int

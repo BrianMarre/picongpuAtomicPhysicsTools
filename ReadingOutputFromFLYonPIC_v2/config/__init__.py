@@ -9,12 +9,9 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-from . import AtomicPopulationPlot
-from . import OpenPMDReader
 from . import ChargeStatePlot
 from . import TimingDataPlot
 from . import SCFLYScan
 from . import SummarySCFLYScanPlot
 
-__all__ = ["AtomicPopulationPlot", "OpenPMDReader", "ChargeStatePlot", "TimingDataPlot", "SCFLYScan",
-           "SummarySCFLYScanPlot"]
+__all__ = ["ChargeStatePlot", "SCFLYScan", "SummarySCFLYScanPlot"]

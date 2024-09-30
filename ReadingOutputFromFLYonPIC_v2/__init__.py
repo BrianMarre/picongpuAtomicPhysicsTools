@@ -9,45 +9,39 @@ Authors: Brian Edward Marre
 License: GPLv3+
 """
 
-# configs for plotting
-from . import Config
-
 # generating SCFLY setups
 from . import SCFlyTools
 
 # file readers
-from . import Reader
+from . import reader
 
-# helpers
-from . import ChargeStateColors
+# general plotter interfaces and abstract base classes
+from .Plotter import Plotter
+from .SpeciesDescriptor import SpeciesDescriptor
+from .StatePlotter import StatePlotter
+from .StateAbsolutePlotter import StateAbsolutePlotter
+from .AtomicStatePlotter import AtomicStatePlotter
+from .AtomicStateDiffPlotter import AtomicStateDiffPlotter
 
-# scan with SCFLY
-from . import ScanSCFLY
+# concrete implementations
+from .AtomicStateAbsolutePlotter import AtomicStateAbsolutePlotter
+from .ChargeStateAbsolutePlotter import ChargeStateAbsolutePlotter
 
-# processing routines
-from . import LoadFLYonPICData
-from . import LoadSCFLYData
-from . import LoadChargeStateData
-from . import ReduceToPerChargeState
-
-#plotting libraries
-from . import PlotAtomicPopulations
-from . import PlotTimingData
-from . import PlotSummarySCFLYScan
-
-
+from .AtomicStateDiffOverviewPlotter import AtomicStateDiffOverviewPlotter
+from .AtomicStateDiffLineoutPlotter import AtomicStateDiffLineoutPlotter
+from .TimingPlotter import TimingPlotter
 
 __all__ = [
-    "Config",
     "SCFlyTools",
-    "Reader",
-    "ChargeStateColors",
-    "ScanSCFLY",
-    "LoadFLYonPICData",
-    "LoadSCFLYData",
-    "LoadChargeStateData",
-    "ReduceToPerChargeState",
-    "PlotAtomicPopulations",
-    "PlotTimingData",
-    "PlotSummarySCFLYScan"]
-
+    "SpeciesDescriptor",
+    "reader",
+    "Plotter",
+    "StatePlotter",
+    "StateAbsolutePlotter",
+    "AtomicStatePlotter",
+    "AtomicStateDiffPlotter"
+    "AtomicStateAbsolutePlotter",
+    "ChargeStateAbsolutePlotter",
+    "AtomicStateDiffOverviewPlotter",
+    "AtomicStateDiffLineoutPlotter",
+    "TimingPlotter"]

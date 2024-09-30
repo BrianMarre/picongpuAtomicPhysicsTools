@@ -39,5 +39,4 @@ class ScanConfig(pydantic.BaseModel):
     figureStoragePath : str
 
     runSCFLY : bool
-    plotEachSim : bool
     plotSummary : bool
