@@ -1,23 +1,51 @@
+"""
+atomicPhysics(FLYonPIC) reference rate calculation
+This file is part of the PIConGPU.
+Copyright 2023-2024 PIConGPU contributors
+Authors: Brian Marre, Axel Huebl
+License: GPLv3+
+"""
+
 import BoundBoundTransitions as boundbound
-import BoundFreeTransitions as boundfree
+import BoundFreeCollisionalTransitions as boundfreecollisional
+import BoundFreeFieldTransitions as boundfreefield
 
 import scipy.constants as const
+import numpy as np
+import mpmath as mp
 
 if __name__ == "__main__":
     # electron histogram info
-    energyElectron = 1000. # eV
-    energyElectronBinWidth = 10. # eV
-    densityElectrons = 1e28 #1/(eV * m^3)
+    # eV
+    energyElectron = 1000.
+    # eV
+    energyElectronBinWidth = 10.
+    # 1/(eV * m^3)
+    densityElectrons = 1e28
 
-    # bound-free transition data
-    ionizationEnergy = 100. # eV
-    excitationEnergyDifference = 5. # eV
-    screenedCharge = 5. # e
+    # bound-free collisional transition data
+    # eV
+    ionizationEnergy = 100.
+    # eV
+    excitationEnergyDifference = 5.
+    # e
+    screenedCharge = 5.
     lowerStateLevelVectorBoundFree = (1,1,0,0,0,0,1,0,1,0)
     upperStateLevelVectorBoundFree = (1,1,0,0,0,0,1,0,0,0)
 
+    # bound-free field transition data
+    #   screened Charge lower state - 1
+    screenedCharge = 4
+    # in eV
+    Hartree = 27.211386245981
+    # in Hartree
+    ionizationEnergy = 5. / Hartree
+    # in atomic_unit["electric field"] ~ 5.1422e11 V/m
+    fieldStrength = 0.0126
+
     # bound-bound transition data
-    energyDiffLowerUpper = 5. # eV
+    # eV
+    energyDiffLowerUpper = 5.
     cxin1 = 1.
     cxin2 = 2.
     cxin3 = 3.
@@ -27,12 +55,14 @@ if __name__ == "__main__":
     absorptionOscillatorStrength = 1.e-1
     lowerStateLevelVectorBoundBound = (1,0,2,0,0,0,1,0,0,0)
     upperStateLevelVectorBoundBound = (1,0,1,0,0,0,1,0,1,0)
-    frequencyPhoton = energyDiffLowerUpper / const.physical_constants["Planck constant in eV/Hz"][0] # 1/s
+    # 1/s
+    frequencyPhoton = energyDiffLowerUpper / const.physical_constants["Planck constant in eV/Hz"][0]
+
 
     print("cross sections:")
     print("- bound-free")
     print("\t collisional ionization cross section: \t  {0:.12e} 1e6*barn".format(
-        boundfree.BoundFreeTransitions.collisionalIonizationCrossSection(
+        boundfreecollisional.BoundFreeCollisionalTransitions.collisionalIonizationCrossSection(
             energyElectron, ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
 
@@ -51,12 +81,21 @@ if __name__ == "__main__":
             excitation=False)))
 
     print("rates:")
-    print("- bound-free")
+    print("- bound-free collsional")
     print("\t collisional ionization rate:  \t\t  {0:.12e} 1/s".format(
-        boundfree.BoundFreeTransitions.rateCollisionalIonization(
+        boundfreecollisional.BoundFreeCollisionalTransitions.rateCollisionalIonization(
             energyElectron, energyElectronBinWidth, densityElectrons,
             ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVectorBoundFree, upperStateLevelVectorBoundFree)))
+
+    print("- bound-free field")
+    # in unit electric field atomic units
+    nEff = boundfreefield.BoundFreeFieldTransitions.n_eff_numpy(screenedCharge, ionizationEnergy)
+    fieldStrengthMaxADKRate = 4. * screenedCharge**3 / (3. * nEff**3 * (4. * nEff - 3.));
+    print("\t ADK fieldStrength: {0:.4e}, F_maxADK: {1:.4e}, F_crit_BSI: {2:.4e}".format(fieldStrength, fieldStrengthMaxADKRate, boundfreefield.BoundFreeFieldTransitions.F_crit_BSI(screenedCharge, ionizationEnergy)))
+
+    print("\t ADK rate(numpy) : {0:.9e} * 1/(3.3e-17s)".format(np.float32(boundfreefield.BoundFreeFieldTransitions.ADKRate_numpy(np.float32(screenedCharge), np.float32(ionizationEnergy), np.float32(fieldStrength)) * 3.3e-17/boundfreefield.atomic_unit["time"])))
+    print("\t ADK rate(mpmath): " + mp.nstr(boundfreefield.BoundFreeFieldTransitions.ADKRate_mpmath(mp.mpf(screenedCharge), mp.mpf(ionizationEnergy), mp.mpf(fieldStrength))  * mp.mpf(3.3e-17)/mp.mpf(boundfreefield.atomic_unit["time"]), 10, max_fixed=1) + " * 1/(3.3e-17s)")
 
     print("- bound-bound")
     print("\t collisional excitation rate:  \t\t  {0:.12e} 1/s".format(

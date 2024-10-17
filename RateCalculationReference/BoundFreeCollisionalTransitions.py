@@ -1,24 +1,25 @@
-"""atomicPhysics rate calculation script
+"""
+atomicPhysics(FLYonPIC) reference rate calculation
 This file is part of the PIConGPU.
-Copyright 2023 PIConGPU contributors
+Copyright 2023-2024 PIConGPU contributors
 Authors: Brian Marre, Axel Huebl
 License: GPLv3+
 """
 
-""" @file implements methods of rate calculation for transitions using bound-free transition data """
+""" @file reference implementation of the rate calculation for bound-free collisional transitions """
 
 import numpy as np
 import scipy.constants as const
 import scipy.special as scipy
 
-class BoundFreeTransitions:
+class BoundFreeCollisionalTransitions:
     @staticmethod
     def _betaFactor(screenedCharge):
         return 0.25 * ( np.sqrt((100. * screenedCharge + 91.)/(4. * screenedCharge + 3.)) - 5 ) # unitless
 
     @staticmethod
     def _wFactor(U, screenedCharge):
-        return np.power(np.log(U), BoundFreeTransitions._betaFactor(screenedCharge)/U) # unitless
+        return np.power(np.log(U), BoundFreeCollisionalTransitions._betaFactor(screenedCharge)/U) # unitless
 
     @staticmethod
     def _multiplicity(lowerStateLevelVector, upperStateLevelVector):
@@ -47,14 +48,14 @@ class BoundFreeTransitions:
 
         energyDifference = ionizationEnergy + excitationEnergyDifference
         U = energyElectron/energyDifference
-        combinatorialFactor = BoundFreeTransitions._multiplicity(lowerStateLevelVector, upperStateLevelVector)
+        combinatorialFactor = BoundFreeCollisionalTransitions._multiplicity(lowerStateLevelVector, upperStateLevelVector)
 
         # m^2 * (eV/(eV))^2 * 1/(eV/eV) * unitless * unitless / (m^2/1e6b) = 1e6b
         if U > 1:
             return (np.pi * const.value("Bohr radius")**2 * 2.3 * combinatorialFactor
                 * (const.value("Rydberg constant times hc in eV")/energyDifference)**2
                 * 1./U
-                * np.log(U) * BoundFreeTransitions._wFactor(U, screenedCharge)) / 1e-22 # 1e6b, 1e-22 m^2
+                * np.log(U) * BoundFreeCollisionalTransitions._wFactor(U, screenedCharge)) / 1e-22 # 1e6b, 1e-22 m^2
         else:
             return 0.
 
@@ -79,7 +80,7 @@ class BoundFreeTransitions:
 
             @return unit: 1/s
         """
-        sigma = BoundFreeTransitions.collisionalIonizationCrossSection(
+        sigma = BoundFreeCollisionalTransitions.collisionalIonizationCrossSection(
             energyElectron, ionizationEnergy, excitationEnergyDifference, screenedCharge,
             lowerStateLevelVector, upperStateLevelVector) # 1e6b
 

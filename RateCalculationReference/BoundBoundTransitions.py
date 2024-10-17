@@ -1,11 +1,12 @@
-"""atomicPhysics rate calculation script
+"""
+atomicPhysics(FLYonPIC) reference rate calculation
 This file is part of the PIConGPU.
-Copyright 2023 PIConGPU contributors
+Copyright 2023-2024 PIConGPU contributors
 Authors: Brian Marre, Axel Huebl
 License: GPLv3+
 """
 
-""" @file implements methods of rate calculation for transitions using bound-bound transition data """
+""" @file reference implementation of the rate calculation for bound-bound transitions """
 
 import numpy as np
 import scipy.constants as const
